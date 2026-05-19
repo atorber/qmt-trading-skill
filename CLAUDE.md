@@ -32,14 +32,14 @@ logs/              # 运行日志 (gitignored)
 just install-all          # 安装全部依赖
 just serve                # 启动 API 服务
 just download-all         # 下载 A 股历史行情 + 财务数据
-just test                 # 运行测试
+just test                 # API 契约测试（pytest + OpenAPI 遍历，无需 QMT）
 just check                # 格式化 + lint (ruff)
 just build                # 构建 wheel
 ```
 
 ## Agent Skills
 
-交易相关任务遵循 `skills/qmt-bridge-trading/SKILL.md`（持仓、下单、批量下单、撤单、清仓）。集成方式见 `skills/README.md`。
+交易相关任务遵循 `skills/qmt-bridge-trading/SKILL.md`（持仓、下单、批量下单、撤单、清仓）。财报下载见 `skills/qmt-bridge-financial-download/SKILL.md`。全量 Skill 与 `just agent-*` 见 `skills/README.md`、`skills/ROADMAP.md`（18 个 Skill 均已提供脚本）。
 
 ## 开发规范
 

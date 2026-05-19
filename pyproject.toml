@@ -63,6 +63,10 @@ test = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-m 'not live'"
+markers = [
+    "live: 对已启动的真实 QMT Bridge 联调（需 QMT_BRIDGE_LIVE=1）",
+]
 filterwarnings = [
     "ignore:Duplicate Operation ID:UserWarning",
 ]
