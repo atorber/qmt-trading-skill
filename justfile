@@ -93,6 +93,79 @@ agent-place-order *ARGS:
 agent-liquidate *ARGS:
     python skills/qmt-bridge-trading/scripts/liquidate.py {{ARGS}}
 
+# 当日交易复盘（只读）
+agent-daily-report *ARGS:
+    python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py {{ARGS}}
+
+# 组合风险快照（只读）
+agent-portfolio-risk *ARGS:
+    python skills/qmt-bridge-portfolio-risk/scripts/portfolio_snapshot.py {{ARGS}}
+
+# 当日盈亏快照（只读）
+agent-daily-pnl *ARGS:
+    python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py {{ARGS}}
+
+# 查询当日委托（只读）
+agent-list-orders *ARGS:
+    python skills/qmt-bridge-order-ops/scripts/list_orders.py {{ARGS}}
+
+# 撤单预览（加 --execute --confirm 提交）
+agent-cancel-orders *ARGS:
+    python skills/qmt-bridge-order-ops/scripts/cancel_orders.py {{ARGS}}
+
+# 自选行情快照（只读，无需 API Key）
+agent-watchlist *ARGS:
+    python skills/qmt-bridge-market-watch/scripts/watchlist_snapshot.py {{ARGS}}
+
+# 板块成分涨跌排序（只读）
+agent-sector-rank *ARGS:
+    python skills/qmt-bridge-sector-theme/scripts/sector_rank.py {{ARGS}}
+
+# 交易日历检查（只读）
+agent-calendar *ARGS:
+    python skills/qmt-bridge-event-calendar/scripts/calendar_check.py {{ARGS}}
+
+# 下载财报到服务端缓存（写操作，建议 --verify）
+agent-download-financial *ARGS:
+    python skills/qmt-bridge-financial-download/scripts/download_financial_data.py {{ARGS}}
+
+# 基本面筛选（查询为主，缺数可自动下载）
+agent-screen-financial *ARGS:
+    python skills/qmt-bridge-fundamental-screen/scripts/screen_financial.py {{ARGS}}
+
+# 公式/指标检查（只读）
+agent-formula-check *ARGS:
+    python skills/qmt-bridge-technical-signal/scripts/formula_check.py {{ARGS}}
+
+# 下单执行预览（不提交）
+agent-execution-preview *ARGS:
+    python skills/qmt-bridge-smart-execution/scripts/execution_preview.py {{ARGS}}
+
+# 再平衡计划（--execute --confirm 提交）
+agent-rebalance *ARGS:
+    python skills/qmt-bridge-rebalance/scripts/rebalance_plan.py {{ARGS}}
+
+# 两融快照（只读）
+agent-credit-snapshot *ARGS:
+    python skills/qmt-bridge-credit-margin/scripts/credit_snapshot.py {{ARGS}}
+
+# WebSocket 订阅示例
+agent-ws-subscribe *ARGS:
+    python skills/qmt-bridge-realtime-monitor/scripts/ws_subscribe.py {{ARGS}}
+
+# ETF / 转债 / 期权 / 港股通（只读）
+agent-etf-snapshot *ARGS:
+    python skills/qmt-bridge-etf/scripts/etf_snapshot.py {{ARGS}}
+
+agent-cb-snapshot *ARGS:
+    python skills/qmt-bridge-convertible/scripts/cb_snapshot.py {{ARGS}}
+
+agent-option-chain *ARGS:
+    python skills/qmt-bridge-option/scripts/option_chain_snapshot.py {{ARGS}}
+
+agent-hk-universe *ARGS:
+    python skills/qmt-bridge-hk-connect/scripts/hk_universe.py {{ARGS}}
+
 # ─────────────────────────── 仪表盘 ─────────────────────────
 
 # 启动可视化仪表盘（http://localhost:8501）
@@ -100,6 +173,18 @@ dashboard:
     streamlit run dashboard/app.py
 
 # ─────────────────────────── 文档 ───────────────────────────
+
+# 使用官方 lark-cli 发布报告到飞书知识库（需 lark-cli auth login）
+lark-publish-report *ARGS:
+    python scripts/lark_publish_report.py {{ARGS}}
+
+# 安装 lark-cli（官方 @larksuite/cli）
+lark-install:
+    npx @larksuite/cli@latest install
+
+# 将 Markdown 报告上传为飞书云文档（旧：自研 API 脚本，推荐 lark-publish-report）
+feishu-create-doc *ARGS:
+    python scripts/feishu_create_doc.py {{ARGS}}
 
 # 本地预览 MkDocs 文档站点（http://127.0.0.1:8001）
 docs:
@@ -129,9 +214,13 @@ docs-clean:
 
 # ─────────────────────────── 测试 ───────────────────────────
 
-# 运行测试
+# API 契约测试（mock xtquant，无需 QMT）
 test *ARGS:
     python -m pytest tests/ {{ARGS}}
+
+# 联调测试（真实 Bridge，默认 8080，需服务已启动）
+test-live *ARGS:
+    $env:QMT_BRIDGE_LIVE = "1"; python -m pytest tests/live -m live -v {{ARGS}}
 
 # 运行测试（verbose）
 test-v:
