@@ -542,7 +542,7 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 
 | 方式 | 说明 |
 |------|------|
-| **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-bridge/`（上游示例：<https://atompilot.github.io/qmt-bridge/>） |
+| **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-bridge/`（上游示例：<https://atorber.github.io/qmt-bridge/>） |
 | **本地 MkDocs** | `just install-docs && just docs` → <http://127.0.0.1:8001> |
 | **运行时 Swagger** | 服务启动后访问 `/docs` 或 `/redoc` |
 
