@@ -33,6 +33,10 @@ from kline_util import (  # noqa: E402
     records_to_list,
 )
 from positions_util import fetch_position_codes  # noqa: E402
+from return_strategy_summary import (  # noqa: E402
+    build_portfolio_day_strategy,
+    format_day_strategy_text,
+)
 from stock_names import fetch_stock_names, label_stock  # noqa: E402
 from table_fmt import print_table  # noqa: E402
 
@@ -299,6 +303,11 @@ def main() -> int:
         action="store_true",
         help="日 K 不足时不自动下载",
     )
+    parser.add_argument(
+        "--no-strategy",
+        action="store_true",
+        help="不输出下一交易日策略与观察点总结",
+    )
     args = parser.parse_args()
 
     client, account_id = make_client(args, require_api_key=args.holdings)
@@ -323,6 +332,7 @@ def main() -> int:
             analyses.append(ReturnAnalysis(stock_code=code, error="无 K 线数据"))
 
     name_map = fetch_stock_names(client, codes)
+    day_plan = build_portfolio_day_strategy(analyses, name_map)
 
     if args.json:
         print(
@@ -362,6 +372,24 @@ def main() -> int:
                         }
                         for a in analyses
                     ],
+                    "day_strategy": None
+                    if args.no_strategy
+                    else {
+                        "overview": day_plan.overview,
+                        "portfolio_watch": day_plan.portfolio_watch,
+                        "stocks": [
+                            {
+                                "stock_code": s.stock_code,
+                                "stock_name": s.stock_name,
+                                "trend_label": s.trend_label,
+                                "stance": s.stance,
+                                "bias": s.bias,
+                                "watch_points": s.watch_points,
+                                "strategy_lines": s.strategy_lines,
+                            }
+                            for s in day_plan.stocks
+                        ],
+                    },
                 },
                 ensure_ascii=False,
                 default=str,
@@ -401,6 +429,9 @@ def main() -> int:
 
     for a in analyses:
         _print_stock(a, name_map, show_detail=not args.no_detail)
+
+    if not args.no_strategy:
+        print(format_day_strategy_text(day_plan))
 
     return 0
 

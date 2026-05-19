@@ -66,7 +66,7 @@ python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py 
 
 1. 确认 Bridge 可用；`--holdings` 需配置 `QMT_BRIDGE_API_KEY`
 2. 持仓模式：读 `query_positions` → `market_data_ex`；不足则 `download_batch` 后重试
-3. 输出汇总表 + 分标的累计涨幅表 + 概率指标
+3. 输出汇总表 + 分标的累计涨幅表 + 概率指标 + **下一交易日策略与观察点**（`--no-strategy` 可关闭）
 4. **只读**，不下单；概率为历史统计，不构成预测或投资建议
 
 ## 安全
