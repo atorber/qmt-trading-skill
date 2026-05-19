@@ -12,8 +12,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
+
+_SHARED = Path(__file__).resolve().parents[2] / "_shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
 from _common import add_client_args, call_api, load_env_files, make_client, unwrap_data
+from stock_names import fetch_stock_names, label_stock  # noqa: E402
 
 ORDER_SELL = 24
 
@@ -105,9 +111,13 @@ def main() -> int:
         print("无可清仓标的（can_use_volume 均为 0 或过滤后为空）")
         return 0
 
+    order_codes = [o["stock_code"] for o in orders]
+    name_map = fetch_stock_names(client, order_codes)
+
     print(f"清仓计划 ({len(orders)} 笔卖出):")
     for o in orders:
-        print(f"  {o['stock_code']}  volume={o['order_volume']}  price_type={o['price_type']}")
+        sym = label_stock(o["stock_code"], name_map)
+        print(f"  {sym}  volume={o['order_volume']}  price_type={o['price_type']}")
 
     if dry_run:
         print("\n【预览】未提交。确认后执行: .../liquidate.py --execute --confirm")
@@ -122,7 +132,8 @@ def main() -> int:
     print("\n已提交:")
     if isinstance(rows, list):
         for row in rows:
-            print(f"  {row.get('stock_code')}  order_id={row.get('order_id')}")
+            code = row.get("stock_code", "?")
+            print(f"  {label_stock(code, name_map)}  order_id={row.get('order_id')}")
     else:
         print(json.dumps(result, ensure_ascii=False, default=str))
     return 0

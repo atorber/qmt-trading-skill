@@ -11,8 +11,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
+
+_SHARED = Path(__file__).resolve().parents[2] / "_shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
 from _common import add_client_args, call_api, load_env_files, make_client
+from stock_names import fetch_stock_names, label_stock  # noqa: E402
 
 ORDER_BUY = 23
 ORDER_SELL = 24
@@ -70,8 +76,12 @@ def main() -> int:
         "strategy_name": args.strategy,
     }
 
+    client_preview, _ = make_client(args)
+    sym = label_stock(args.stock_code, fetch_stock_names(client_preview, [args.stock_code]))
+
     if not args.execute:
         print("【预览】未提交委托。确认后请加 --execute --confirm")
+        print(f"  {side} {sym} x{args.volume}")
         print(json.dumps(plan, ensure_ascii=False, indent=2))
         return 0
 
@@ -92,7 +102,8 @@ def main() -> int:
         account_id=account_id,
     )
     order_id = result.get("order_id", result)
-    print(f"已提交 {side} {args.stock_code} x{args.volume}  order_id={order_id}")
+    sym = label_stock(args.stock_code, fetch_stock_names(client, [args.stock_code]))
+    print(f"已提交 {side} {sym} x{args.volume}  order_id={order_id}")
     return 0
 
 
