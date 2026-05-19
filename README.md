@@ -27,7 +27,7 @@ QMT Bridge 解决这个问题：Windows 电脑作为数据中转站，运行 QMT
 - **零依赖客户端** — Python 客户端基于 stdlib，无需安装 xtquant 即可在任意平台使用
 - **API Key 认证** — 可选的 API Key 保护，交易端点强制认证
 - **自动预下载** — 服务启动时自动下载板块、日历、指数权重等基础数据，之后每日定时刷新，客户端无需手动触发
-- **Agent Skills** — 仓库内置 `skills/`，供 Cursor / Claude Code 等 Agent 统一执行交易流程（持仓、下单、清仓等）
+- **Agent Skills** — 仓库内置 **19 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），配套 `just agent-*` 可执行脚本
 
 ## Prerequisites
 
@@ -88,7 +88,7 @@ qmt-server
 qmt-server --port 8080 --log-level debug
 
 # 启用交易模块
-qmt-server --trading --api-key your-secret-key --mini-qmt-path "C:\国金QMT交易端\userdata_mini" --account-id 12345678
+qmt-server --port 8080 --log-level debug --trading --api-key your-api-key --mini-qmt-path "C:\中山证券QMT实盘交易端\userdata_mini" --account-id your-account
 ```
 
 也可以使用脚本：
@@ -550,19 +550,47 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 
 ## Agent Skills
 
-仓库 [`skills/`](skills/) 目录发布与 API 配套的 Agent Skill（Markdown + YAML frontmatter），随 git 克隆分发，便于在多种 Agent 中复用同一套交易规范。
+仓库 [`skills/`](skills/) 发布 **19 个**与 REST API 配套的 Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 等在对话中按规范调用 Bridge。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)，完整列表见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
 
-| Skill | 说明 |
-|-------|------|
-| [`qmt-bridge-trading`](skills/qmt-bridge-trading/SKILL.md) | 持仓查询、下单、批量下单、撤单、清仓 |
+### 分类概览
 
-**Cursor**：在仓库根目录链接到项目 skills 目录后即可自动匹配：
+| 类别 | Skill | 说明 |
+|------|-------|------|
+| 交易 | [trading](skills/qmt-bridge-trading/SKILL.md) | 持仓、下单、清仓 |
+| | [order-ops](skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 |
+| | [smart-execution](skills/qmt-bridge-smart-execution/SKILL.md) | 下单预览 |
+| | [rebalance](skills/qmt-bridge-rebalance/SKILL.md) | 再平衡 |
+| 风控与复盘 | [portfolio-risk](skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险快照 |
+| | [**daily-pnl**](skills/qmt-bridge-daily-pnl/SKILL.md) | **当日盈亏**（持仓 + 成交 + 已清仓） |
+| | [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | 当日交易复盘 |
+| 研究 | [market-watch](skills/qmt-bridge-market-watch/SKILL.md) | 自选/指数快照 |
+| | [sector-theme](skills/qmt-bridge-sector-theme/SKILL.md) | 板块涨跌排序 |
+| | [financial-download](skills/qmt-bridge-financial-download/SKILL.md) | 下载财报 |
+| | [fundamental-screen](skills/qmt-bridge-fundamental-screen/SKILL.md) | 财报筛选 |
+| | [technical-signal](skills/qmt-bridge-technical-signal/SKILL.md) | 公式检查 |
+| 其他 | [realtime-monitor](skills/qmt-bridge-realtime-monitor/SKILL.md)、[event-calendar](skills/qmt-bridge-event-calendar/SKILL.md)、[credit-margin](skills/qmt-bridge-credit-margin/SKILL.md)、[etf](skills/qmt-bridge-etf/SKILL.md)、[convertible](skills/qmt-bridge-convertible/SKILL.md)、[option](skills/qmt-bridge-option/SKILL.md)、[hk-connect](skills/qmt-bridge-hk-connect/SKILL.md) | 见各 `SKILL.md` |
+
+### 快速运行（Agent 脚本）
+
+在仓库根目录配置 `.env`（至少 `QMT_BRIDGE_API_KEY`；客户端连接请用 `127.0.0.1`，勿将 `QMT_BRIDGE_HOST` 设为 `0.0.0.0`）：
 
 ```bash
-mkdir -p .cursor/skills && ln -sf ../../skills/qmt-bridge-trading .cursor/skills/qmt-bridge-trading
+pip install -e .
+
+# 交易状态（只读）
+just agent-trading-status --port 8080 --api-key YOUR_KEY
+
+# 当日盈亏：表格化账户概览 + 分标的昨仓/今买/今卖拆解（只读）
+just agent-daily-pnl --port 8080 --api-key YOUR_KEY
+
+# 无 just 时
+python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
+  --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 ```
 
-也可在对话中直接 `@skills/qmt-bridge-trading/SKILL.md`。配套可执行脚本见 `skills/qmt-bridge-trading/scripts/`（`just agent-trading-status` 等）。其他 Agent 与贡献说明见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
+`daily-pnl` 优先采用 QMT 柜台 `today_profit_loss`；否则按 **现市值 − 昨收×昨仓 − 今日买入金额 + 今日卖出金额** 估算，并包含当日已清仓标的。`--json` 输出机器可读结果；`--no-detail` 为紧凑表。
+
+**Cursor**：可将常用 skill 链到 `.cursor/skills/`，或对话中 `@skills/qmt-bridge-daily-pnl/SKILL.md`。Windows 终端中文乱码可设 `PYTHONIOENCODING=utf-8` 或 `chcp 65001`。
 
 ## Project Structure
 
@@ -570,11 +598,12 @@ mkdir -p .cursor/skills && ln -sf ../../skills/qmt-bridge-trading .cursor/skills
 qmt-bridge/
 ├── pyproject.toml                  # 项目元数据与依赖
 ├── .env.example                    # 配置模板
-├── skills/                         # Agent Skills（随仓库发布）
-│   ├── README.md                   # 各 Agent 集成说明
-│   └── qmt-bridge-trading/         # 交易 skill
-│       ├── SKILL.md
-│       └── scripts/                # Agent 可执行脚本
+├── skills/                         # 19 个 Agent Skills + _shared 公共模块
+│   ├── README.md                   # 列表、工作流、运行方式
+│   ├── ROADMAP.md                  # 实现状态
+│   ├── _shared/                    # common、pnl_util、table_fmt 等
+│   └── qmt-bridge-*/               # 各 skill：SKILL.md + scripts/
+│       └── qmt-bridge-daily-pnl/   # 当日盈亏表格报告
 ├── scripts/                        # 启动 / 停止脚本
 │   ├── start.sh / start.bat        # 前台启动
 │   ├── start-nohup.sh              # 后台启动
@@ -600,8 +629,32 @@ qmt-bridge/
 │       ├── base.py                 # HTTP 传输层 (stdlib)
 │       ├── websocket.py            # WebSocket 订阅
 │       └── [feature].py            # 各功能域客户端方法
-└── tests/                          # 测试
+└── tests/                          # API 自动化测试（OpenAPI 契约）
+    ├── openapi_harness.py            # 遍历全部 REST 端点
+    ├── mocks/                        # xtquant / 交易桩
+    └── test_openapi_contract.py
 ```
+
+## API 自动化测试
+
+**契约测试**（默认，无需 QMT）：mock 遍历 OpenAPI 全部 REST 端点。
+
+```bash
+pip install -e ".[server,test]"
+just test
+```
+
+**联调测试**（对已启动的真实 Bridge，如端口 `8080`）：
+
+```bash
+# 先启动 qmt-server，再执行
+$env:QMT_BRIDGE_LIVE = "1"
+$env:QMT_BRIDGE_PORT = "8080"
+$env:QMT_BRIDGE_API_KEY = "your-key"   # 启用 --trading 时必填
+just test-live
+```
+
+详见 [`tests/README.md`](tests/README.md)。
 
 ## Authentication
 
