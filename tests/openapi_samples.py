@@ -67,6 +67,15 @@ OPERATION_SAMPLES: dict[str, dict] = {
             "dedate": "20250321",
         },
     },
+    "GET /api/option/detail": {
+        "query": {"option_code": "10001234.SH"},
+    },
+    "POST /api/formula/import": {
+        "body": {"formula_file": "C:\\temp\\formula.lua"},
+    },
+    "DELETE /api/formula/delete": {
+        "query": {"formula_name": "test_formula"},
+    },
     "GET /api/futures/main_contract": {
         "query": {"code_market": "IF.CFE"},
     },

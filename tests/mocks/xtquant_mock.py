@@ -13,7 +13,7 @@ _SAMPLE_STOCKS = ["000001.SZ", "600519.SH"]
 _SAMPLE_SECTOR = "沪深A股"
 
 
-def _empty() -> dict:
+def _empty(*_args, **_kwargs):
     return {}
 
 
@@ -78,7 +78,14 @@ _HANDLERS: dict[str, object] = {
     },
     "get_instrument_detail": lambda *_a, **_k: {"InstrumentName": "平安银行"},
     "get_instrument_type": lambda *_a, **_k: "stock",
-    "get_ipo_info": _empty,
+    "get_ipo_info": lambda *_a, **_k: [],
+    "get_trading_dates": lambda *_a, **_k: ["20250102", "20250103"],
+    "get_holidays": lambda *_a, **_k: [],
+    "get_trading_calendar": lambda *_a, **_k: {"SH": ["20250102"]},
+    "get_trading_period": lambda *_a, **_k: [],
+    "import_formula": _zero,
+    "del_formula": _zero,
+    "get_formulas": lambda *_a, **_k: [],
     "get_index_weight": lambda *_a, **_k: {_SAMPLE_STOCK: 0.01},
     "get_his_st_data": _empty,
     "get_main_contract": lambda *_a, **_k: "IF2506.CFE",

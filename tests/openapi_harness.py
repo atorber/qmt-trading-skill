@@ -207,6 +207,15 @@ def build_request(
     return op.method, url, query, body
 
 
+def _request_parts(
+    spec: dict,
+    op: ApiOperation,
+    headers: dict[str, str] | None,
+) -> tuple[str, str, dict[str, Any], dict[str, Any] | list[Any] | None, dict[str, str]]:
+    method, url, query, body = build_request(spec, op)
+    return method, url, query, body, dict(headers or {})
+
+
 def invoke_operation(
     client: TestClient,
     spec: dict,
@@ -214,8 +223,7 @@ def invoke_operation(
     headers: dict[str, str] | None = None,
 ) -> Any:
     """调用单个端点并返回 TestClient 响应。"""
-    method, url, query, body = build_request(spec, op)
-    req_headers = dict(headers or {})
+    method, url, query, body, req_headers = _request_parts(spec, op, headers)
     kwargs: dict[str, Any] = {"headers": req_headers}
     if query:
         kwargs["params"] = query
@@ -225,6 +233,39 @@ def invoke_operation(
     return getattr(client, method)(url, **kwargs)
 
 
+def invoke_operation_http(
+    client,
+    spec: dict,
+    op: ApiOperation,
+    headers: dict[str, str] | None = None,
+):
+    """调用单个端点并返回 httpx 响应（联调测试用）。"""
+    method, url, query, body, req_headers = _request_parts(spec, op, headers)
+    kwargs: dict[str, Any] = {"headers": req_headers}
+    if query:
+        kwargs["params"] = query
+    if body is not None and op.method in ("post", "put", "patch", "delete"):
+        kwargs["json"] = body
+    return client.request(method.upper(), url, **kwargs)
+
+
+def _collect_failures(
+    client,
+    spec: dict,
+    *,
+    auth_headers: dict[str, str],
+    invoke,
+) -> list[tuple[ApiOperation, int, str]]:
+    failures: list[tuple[ApiOperation, int, str]] = []
+    for op in collect_operations(spec):
+        headers = auth_headers if op.requires_auth else {}
+        resp = invoke(client, spec, op, headers)
+        if resp.status_code not in SUCCESS_STATUS:
+            detail = resp.text[:300] if resp.text else ""
+            failures.append((op, resp.status_code, detail))
+    return failures
+
+
 def run_all_operations(
     client: TestClient,
     spec: dict,
@@ -232,11 +273,24 @@ def run_all_operations(
     auth_headers: dict[str, str],
 ) -> list[tuple[ApiOperation, int, str]]:
     """执行全部操作，返回失败列表 (op, status, detail)。"""
-    failures: list[tuple[ApiOperation, int, str]] = []
-    for op in collect_operations(spec):
-        headers = auth_headers if op.requires_auth else {}
-        resp = invoke_operation(client, spec, op, headers=headers)
-        if resp.status_code not in SUCCESS_STATUS:
-            detail = resp.text[:300] if resp.text else ""
-            failures.append((op, resp.status_code, detail))
-    return failures
+    return _collect_failures(
+        client,
+        spec,
+        auth_headers=auth_headers,
+        invoke=lambda c, s, o, h: invoke_operation(c, s, o, h),
+    )
+
+
+def run_all_operations_http(
+    client,
+    spec: dict,
+    *,
+    auth_headers: dict[str, str],
+) -> list[tuple[ApiOperation, int, str]]:
+    """对真实 Bridge 执行全部 OpenAPI 操作。"""
+    return _collect_failures(
+        client,
+        spec,
+        auth_headers=auth_headers,
+        invoke=lambda c, s, o, h: invoke_operation_http(c, s, o, h),
+    )
