@@ -8,7 +8,7 @@ description: >-
 
 # QMT Bridge 交易 Skill
 
-> **发布位置**：`qmt-bridge` 仓库 `skills/qmt-bridge-trading/SKILL.md`。集成说明见同级 `skills/README.md` 与文档 [agent-skills.md](../../docs/agent-skills.md)。
+> **发布位置**：`qmt-bridge` 仓库 `skills/qmt-bridge-trading/SKILL.md`。集成说明见 [`skills/README.md`](../README.md)、[路线图](../ROADMAP.md) 与文档 [agent-skills.md](../../docs/agent-skills.md)。相关 Skill：复盘 [execution-review](../qmt-bridge-execution-review/SKILL.md)、风控 [portfolio-risk](../qmt-bridge-portfolio-risk/SKILL.md)、撤单 [order-ops](../qmt-bridge-order-ops/SKILL.md)。
 
 通过已部署的 **QMT Bridge** 服务（FastAPI + miniQMT）完成真实交易操作。服务端须在 **Windows** 上运行，并启用交易模块。
 

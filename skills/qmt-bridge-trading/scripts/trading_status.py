@@ -11,6 +11,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
+
+_SHARED = Path(__file__).resolve().parents[2] / "_shared"
+if str(_SHARED) not in sys.path:
+    sys.path.insert(0, str(_SHARED))
 
 from _common import (
     add_client_args,
@@ -20,6 +25,7 @@ from _common import (
     make_client,
     unwrap_data,
 )
+from stock_names import fetch_stock_names, label_stock  # noqa: E402
 
 
 def main() -> int:
@@ -49,6 +55,13 @@ def main() -> int:
         )
         if not isinstance(positions, list):
             positions = []
+
+    pos_codes = [
+        str(p.get("stock_code") or "").strip()
+        for p in positions
+        if isinstance(p, dict) and p.get("stock_code")
+    ]
+    name_map = fetch_stock_names(client, pos_codes) if pos_codes else {}
 
     asset = {}
     if not args.no_asset:
@@ -96,11 +109,12 @@ def main() -> int:
             print("  (无持仓)")
         for p in positions:
             code = p.get("stock_code", "?")
+            sym = label_stock(code, name_map)
             vol = p.get("volume", 0)
             usable = p.get("can_use_volume", 0)
             mkt = p.get("market_value", 0)
             print(
-                f"  {code}  vol={vol}  can_use={usable}  "
+                f"  {sym}  vol={vol}  can_use={usable}  "
                 f"market_value={fmt_num(mkt)}"
             )
 
