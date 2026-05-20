@@ -43,7 +43,7 @@ just agent-<名称> --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 |------|------|------|------------|
 | `agent-trading-status` | 是 | 健康、持仓、资产 | `帮我查持仓和可用资金` |
 | `agent-daily-pnl` | 是 | 当日盈亏表格 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
-| `agent-daily-report` | 是 | 委托/成交复盘 | `生成今日交易复盘` |
+| `agent-daily-report` | 是 | 复盘+操作评价 | `今日操作评估` · `交易复盘+执行质量` |
 | `agent-portfolio-risk` | 是 | 组合风险 | `组合风险快照` |
 | `agent-list-orders` | 是 | 当日委托 | `查今日委托和可撤单` |
 | `agent-cancel-orders` | 预览 | 撤单 | `撤销 order_id 为 xxx 的委托` |

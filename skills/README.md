@@ -17,7 +17,7 @@
 | Skill | 说明 | just 示例 | 提示词示例 |
 |-------|------|-----------|------------|
 | [qmt-bridge-trading](qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `just agent-trading-status` | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
-| [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | 当日复盘 | `just agent-daily-report` | `生成今日交易复盘` · `汇总今天委托和成交` · `看看执行质量和滑点` |
+| [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | 当日复盘/操作评价 | `just agent-daily-report` | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `just agent-portfolio-risk` | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `just agent-daily-pnl` | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
 | [qmt-bridge-order-ops](qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `just agent-list-orders` | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
