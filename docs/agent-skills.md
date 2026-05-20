@@ -59,7 +59,7 @@ python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
 | Skill | 说明 | just 示例 | 提示词示例 |
 |-------|------|-----------|------------|
 | [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `agent-trading-status` | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
-| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 当日复盘 | `agent-daily-report` | `生成今日交易复盘` · `汇总今天委托和成交` · `看看执行质量和滑点` |
+| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `agent-daily-report` | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
 | [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `agent-portfolio-risk` | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `agent-daily-pnl` | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
 | [qmt-bridge-order-ops](../skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `agent-list-orders` | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
@@ -97,7 +97,7 @@ calendar → watchlist / sector-rank
 | 风控 | `agent-portfolio-risk` | 集中度、现金 | `组合风险快照` · `下单前现金够不够` |
 | 盈亏 | `agent-daily-pnl` | 当日盈亏表 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
 | 执行 | `agent-execution-preview` → `agent-place-order` | 预览后下单 | `预览这笔买单` · `用 Bridge 下一笔买入（先预览）` |
-| 复盘 | `agent-daily-report` | 委托/成交 | `生成今日交易复盘` |
+| 复盘 | `agent-daily-report` | 委托/成交/操作评价 | `今日操作评估` · `生成今日交易复盘` |
 
 ## 当日盈亏（daily-pnl）
 
