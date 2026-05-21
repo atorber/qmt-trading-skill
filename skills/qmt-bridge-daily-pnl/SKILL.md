@@ -26,7 +26,7 @@ description: >-
 | `scripts/daily_pnl_snapshot.py` | asset + positions + **trades**，汇总当日盈亏（含已清仓） |
 
 ```bash
-just agent-daily-pnl --port 8080 --api-key KEY
+python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key KEY
 python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --json
 ```
 

@@ -1,11 +1,6 @@
-# qmt-bridge-order-ops 脚本
-
-| 脚本 | 状态 | 说明 |
-|------|------|------|
-| `list_orders.py` | ✅ | 委托列表，`--cancelable-only` |
-| `cancel_orders.py` | ✅ | `--sysid` 或 `--cancelable-only`；`--execute --confirm` 撤单 |
+# order-ops 脚本
 
 ```bash
-just agent-list-orders --port 8080 --api-key KEY
-just agent-cancel-orders --cancelable-only --port 8080 --api-key KEY
+python skills/qmt-bridge-order-ops/scripts/list_orders.py --host 127.0.0.1 --port 8080 --api-key KEY
+python skills/qmt-bridge-order-ops/scripts/cancel_orders.py --cancelable-only --host 127.0.0.1 --port 8080 --api-key KEY
 ```

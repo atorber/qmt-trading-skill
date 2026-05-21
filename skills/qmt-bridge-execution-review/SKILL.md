@@ -25,8 +25,8 @@ description: >-
 | `scripts/daily_trade_report.py` | orders + trades + 操作评价；`--json` |
 
 ```bash
-just agent-daily-report --port 8080 --api-key KEY
-python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --json
+python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY
+python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --json --api-key KEY
 ```
 
 | 参数 | 说明 |
@@ -73,7 +73,6 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --json
 
 - 只读；需 `X-API-Key` 的交易查询端点
 
-## 参考
+## 发布到飞书云文档
 
-- [qmt-bridge-daily-pnl](../qmt-bridge-daily-pnl/SKILL.md) · [qmt-bridge-trading](../qmt-bridge-trading/SKILL.md)
-- `docs/rest-api.md`
+同步飞书：使用 **[qmt-bridge-feishu-doc](../qmt-bridge-feishu-doc/SKILL.md)** + **lark-doc** / **lark-drive** Skill（`lark-cli docs +update`，勿用 `scripts/` 飞书脚本）。工作流见 `references/workflows/daily-eval-sync.md`。

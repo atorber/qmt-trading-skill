@@ -27,7 +27,7 @@ QMT Bridge 解决这个问题：Windows 电脑作为数据中转站，运行 QMT
 - **零依赖客户端** — Python 客户端基于 stdlib，无需安装 xtquant 即可在任意平台使用
 - **API Key 认证** — 可选的 API Key 保护，交易端点强制认证
 - **自动预下载** — 服务启动时自动下载板块、日历、指数权重等基础数据，之后每日定时刷新，客户端无需手动触发
-- **Agent Skills** — 仓库内置 **20 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），配套 `just agent-*` 可执行脚本
+- **Agent Skills** — 仓库内置 **21 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），自然语言或 `@` Skill 触发，由 Agent 执行脚本
 
 ## Prerequisites
 
@@ -543,14 +543,14 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 | 方式 | 说明 |
 |------|------|
 | **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-bridge/`（上游示例：<https://atorber.github.io/qmt-bridge/>） |
-| **本地 MkDocs** | `just install-docs && just docs` → <http://127.0.0.1:8001> |
+| **本地 MkDocs** | `pip install -e ".[docs]" && mkdocs serve -a 127.0.0.1:8001` |
 | **运行时 Swagger** | 服务启动后访问 `/docs` 或 `/redoc` |
 
 首次启用需在仓库 **Settings → Pages → Build and deployment** 中将 Source 设为 **GitHub Actions**。
 
 ## Agent Skills
 
-仓库 [`skills/`](skills/) 发布 **20 个**与 REST API 配套的 Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 等在对话中按规范调用 Bridge。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)；完整列表、**just 命令与提示词示例**见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
+仓库 [`skills/`](skills/) 发布 **21 个**与 REST API 配套的 Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 等在对话中按自然语言调用 Bridge。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)；**提示词示例**见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
 
 ### 分类概览
 
@@ -563,6 +563,7 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 | 风控与复盘 | [portfolio-risk](skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险快照 |
 | | [**daily-pnl**](skills/qmt-bridge-daily-pnl/SKILL.md) | **当日盈亏**（持仓 + 成交 + 已清仓） |
 | | [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | 当日交易复盘 |
+| | [feishu-doc](skills/qmt-bridge-feishu-doc/SKILL.md) | 报告上传飞书 |
 | 研究 | [**return-analysis**](skills/qmt-bridge-return-analysis/SKILL.md) | **多周期累计涨幅 + 涨跌概率**（日 K） |
 | | [market-watch](skills/qmt-bridge-market-watch/SKILL.md) | 自选/指数快照 |
 | | [sector-theme](skills/qmt-bridge-sector-theme/SKILL.md) | 板块涨跌排序 |
@@ -571,28 +572,17 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 | | [technical-signal](skills/qmt-bridge-technical-signal/SKILL.md) | 公式检查 |
 | 其他 | [realtime-monitor](skills/qmt-bridge-realtime-monitor/SKILL.md)、[event-calendar](skills/qmt-bridge-event-calendar/SKILL.md)、[credit-margin](skills/qmt-bridge-credit-margin/SKILL.md)、[etf](skills/qmt-bridge-etf/SKILL.md)、[convertible](skills/qmt-bridge-convertible/SKILL.md)、[option](skills/qmt-bridge-option/SKILL.md)、[hk-connect](skills/qmt-bridge-hk-connect/SKILL.md) | 见各 `SKILL.md` |
 
-### 快速运行（Agent 脚本）
+### 快速使用（自然语言）
 
-在仓库根目录配置 `.env`（至少 `QMT_BRIDGE_API_KEY`；客户端连接请用 `127.0.0.1`，勿将 `QMT_BRIDGE_HOST` 设为 `0.0.0.0`）：
+在 Cursor 中直接说，例如：`帮我查持仓`、`今天账户盈亏多少`、`生成今日交易复盘`、`把复盘同步到飞书`。Agent 会读取对应 `skills/qmt-bridge-*/SKILL.md` 并执行脚本。
+
+本机手动跑脚本时，在仓库根目录配置 `.env`（至少 `QMT_BRIDGE_API_KEY`；客户端请用 `127.0.0.1`）：
 
 ```bash
 pip install -e .
-
-# 交易状态（只读）
-just agent-trading-status --port 8080 --api-key YOUR_KEY
-
-# 当日盈亏：表格化账户概览 + 分标的昨仓/今买/今卖拆解（只读）
-just agent-daily-pnl --port 8080 --api-key YOUR_KEY
-
-# 累计涨幅与涨跌概率（持仓一键：需 API Key，缺 K 自动下载）
-just agent-return-analysis --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-
-# 指定代码（行情一般无需 Key）
-just agent-return-analysis --host 127.0.0.1 --port 8080 --codes 000001.SZ,600519.SH
-
-# 无 just 时
-python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
-  --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-trading/scripts/trading_status.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 ```
 
 `daily-pnl` 优先采用 QMT 柜台 `today_profit_loss`；否则按 **现市值 − 昨收×昨仓 − 今日买入金额 + 今日卖出金额** 估算，并包含当日已清仓标的。`--json` 输出机器可读结果；`--no-detail` 为紧凑表。
@@ -605,7 +595,7 @@ python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
 qmt-bridge/
 ├── pyproject.toml                  # 项目元数据与依赖
 ├── .env.example                    # 配置模板
-├── skills/                         # 20 个 Agent Skills + _shared 公共模块
+├── skills/                         # 21 个 Agent Skills + _shared 公共模块
 │   ├── README.md                   # 列表、工作流、运行方式
 │   ├── ROADMAP.md                  # 实现状态
 │   ├── _shared/                    # common、pnl_util、table_fmt 等
@@ -648,7 +638,7 @@ qmt-bridge/
 
 ```bash
 pip install -e ".[server,test]"
-just test
+python -m pytest tests/ -q
 ```
 
 **联调测试**（对已启动的真实 Bridge，如端口 `8080`）：
@@ -658,7 +648,7 @@ just test
 $env:QMT_BRIDGE_LIVE = "1"
 $env:QMT_BRIDGE_PORT = "8080"
 $env:QMT_BRIDGE_API_KEY = "your-key"   # 启用 --trading 时必填
-just test-live
+python -m pytest tests/live -m live -v
 ```
 
 详见 [`tests/README.md`](tests/README.md)。

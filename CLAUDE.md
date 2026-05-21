@@ -29,17 +29,17 @@ logs/              # 运行日志 (gitignored)
 ## 常用命令
 
 ```bash
-just install-all          # 安装全部依赖
-just serve                # 启动 API 服务
-just download-all         # 下载 A 股历史行情 + 财务数据
-just test                 # API 契约测试（pytest + OpenAPI 遍历，无需 QMT）
-just check                # 格式化 + lint (ruff)
-just build                # 构建 wheel
+pip install -e ".[full,docs,dashboard]"   # 安装全部依赖
+qmt-server --port 8080 --trading          # 启动 API 服务
+python scripts/download_all.py            # 下载 A 股历史行情 + 财务数据
+python -m pytest tests/ -q                # API 契约测试（无需 QMT）
+python -m ruff format src/ tests/ && python -m ruff check src/ tests/
+python -m build                           # 构建 wheel
 ```
 
 ## Agent Skills
 
-交易相关任务遵循 `skills/qmt-bridge-trading/SKILL.md`（持仓、下单、批量下单、撤单、清仓）。财报下载见 `skills/qmt-bridge-financial-download/SKILL.md`。全量 Skill 与 `just agent-*` 见 `skills/README.md`、`skills/ROADMAP.md`（20 个 Skill 均已提供脚本）。
+交易相关任务遵循 `skills/qmt-bridge-trading/SKILL.md`（持仓、下单、批量下单、撤单、清仓）。财报下载见 `skills/qmt-bridge-financial-download/SKILL.md`。全量 Skill 见 `skills/README.md`、`skills/ROADMAP.md`（21 个 Skill，自然语言或 `@` Skill 触发，由 Agent 执行 `skills/*/scripts/*.py`）。飞书文档上传见 `skills/qmt-bridge-feishu-doc/SKILL.md`（lark-cli + lark-doc，无 scripts/ 飞书脚本）。
 
 ## 开发规范
 
@@ -60,7 +60,7 @@ just build                # 构建 wheel
 
 - 优先编辑现有文件，避免不必要的新建文件
 - 独立脚本放 `scripts/`，保持可单独运行（不 import 项目内部模块的非公开 API）
-- 新增 `scripts/` 脚本时同步更新 `justfile` 中的快捷命令
+- 新增 `scripts/` 脚本时在对应 Skill 的 `SKILL.md` 中补充调用示例
 
 ### 依赖管理
 
