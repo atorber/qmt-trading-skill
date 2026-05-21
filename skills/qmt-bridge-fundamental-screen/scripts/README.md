@@ -7,7 +7,7 @@
 仅下载财报 → [financial-download](../../qmt-bridge-financial-download/SKILL.md)
 
 ```bash
-just agent-screen-financial --host 127.0.0.1 --port 8080 \
+python skills/qmt-bridge-fundamental-screen/scripts/screen_financial.py --host 127.0.0.1 --port 8080 \
   --codes 688008.SH,603986.SH --table Pershareindex --field roe --min 5
 ```
 

@@ -57,3 +57,4 @@ htmlcov/
 
 # Documentation build output
 site/
+reports/*

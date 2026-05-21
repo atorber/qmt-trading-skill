@@ -93,24 +93,21 @@ http://<Windows局域网IP>:8000/docs
 curl http://<Windows局域网IP>:8000/api/meta/health
 ```
 
-## 6. Agent Skills 与 just（可选）
+## 6. Agent Skills（推荐）
 
-仓库提供 [Agent Skills](agent-skills.md) 与根目录 [`justfile`](../justfile)，便于 Agent 或本机快速执行只读查询与交易预览。
+仓库提供 [Agent Skills](agent-skills.md)：在 Cursor 中用**自然语言**或 `@skills/qmt-bridge-*/SKILL.md` 触发，由 Agent 执行 `skills/*/scripts/*.py`。
 
 ```bash
 pip install -e .
 cp .env.example .env
 # 编辑 .env：QMT_BRIDGE_API_KEY、端口等
-
-# 安装 just 后（https://github.com/casey/just）
-just agent-trading-status --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-just agent-daily-pnl --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+qmt-server --port 8080 --trading   # 示例：启动 Bridge
 ```
 
 !!! tip "客户端地址"
-    服务端监听可用 `QMT_BRIDGE_HOST=0.0.0.0`；运行 Agent 脚本时请连接 **`127.0.0.1`**（或局域网 IP），不要写 `0.0.0.0`。
+    服务端监听可用 `QMT_BRIDGE_HOST=0.0.0.0`；Agent 脚本连接请用 **`127.0.0.1`**（或局域网 IP），不要写 `0.0.0.0`。
 
-无 just 时直接运行 `skills/<skill名>/scripts/*.py`，完整命令表见 [开发与 just](development.md)。对 Agent 可直接说例如：`今天账户盈亏多少`、`生成今日交易复盘`、`帮我查持仓和可用资金`。完整表见 [skills/README.md](../skills/README.md) 或 [Agent Skills — 全部 Skills](agent-skills.md#全部-skills含提示词)。
+提示词示例：`今天账户盈亏多少`、`生成今日交易复盘`、`把今日复盘同步到飞书`。完整表见 [skills/README.md](../skills/README.md) 或 [Agent Skills](agent-skills.md)。开发用命令见 [开发指南](development.md)。
 
 ## Python 客户端用法
 

@@ -39,7 +39,7 @@ python skills/qmt-bridge-financial-download/scripts/download_financial_data.py \
   --codes 600519.SH --all-tables --verify
 ```
 
-`just agent-download-financial` 与上述参数相同。
+`python skills/qmt-bridge-financial-download/scripts/download_financial_data.py` 与上述参数相同。
 
 ## 推荐流程（Agent）
 

@@ -1,83 +1,72 @@
 # Agent Skills
 
-QMT Bridge 在 [`skills/`](../skills/) 提供 **20 个 Agent Skills**，均已配套可执行 Python 脚本与 [`justfile`](../justfile) 中的 `just agent-*` 快捷命令。
+QMT Bridge 在 [`skills/`](../skills/) 提供 **21 个 Agent Skills**，均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
 
-**路线图**：[skills/ROADMAP.md](../skills/ROADMAP.md) · **总览**：[skills/README.md](../skills/README.md) · **just 命令**：[开发与 just](development.md)
+**路线图**：[skills/ROADMAP.md](../skills/ROADMAP.md) · **总览**：[skills/README.md](../skills/README.md) · **开发命令**：[开发指南](development.md)
 
 ## 环境准备
 
-1. 安装项目：`pip install -e .`（或 `just install-all`）
+1. 安装项目：`pip install -e .` 或 `pip install -e ".[full]"`
 2. 复制配置：`cp .env.example .env`
 3. 启用交易相关 Skill 时配置：
    - `QMT_BRIDGE_API_KEY`
    - `QMT_BRIDGE_TRADING_ACCOUNT_ID`（可选）
-4. Bridge 已启动且 QMT 已登录（`just serve` 或 `qmt-server --trading ...`）
+4. Bridge 已启动且 QMT 已登录（`qmt-server --trading ...`）
 
 !!! tip "客户端连接地址"
     `.env` 中 `QMT_BRIDGE_HOST=0.0.0.0` 仅用于**服务端监听**。在本机跑 Agent 脚本时请用 **`127.0.0.1`**，或在命令行传 `--host 127.0.0.1`，不要用 `0.0.0.0` 作为客户端目标地址。
 
-```bash
-# 示例（端口与 .env 一致）
-just agent-trading-status --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-```
-
 Windows 终端中文乱码：`chcp 65001` 或 `set PYTHONIOENCODING=utf-8`。
 
-## 快速开始
+## 快速开始（自然语言）
+
+在 Cursor 中直接说，例如：
+
+- `帮我查持仓和可用资金`
+- `今天账户盈亏多少`
+- `生成今日交易复盘并同步到飞书`
+
+Agent 会读取对应 `SKILL.md` 并执行脚本。若需手动跑脚本（路径见各 Skill 文档）：
 
 ```bash
-pip install -e .
-
-# 交易状态
-just agent-trading-status --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-
-# 当日盈亏（表格：账户概览 + 分标的拆解）
-just agent-daily-pnl --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-
-# 当日复盘、自选快照
-just agent-daily-report --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-just agent-watchlist --host 127.0.0.1 --port 8080 --codes 300394.SZ,688008.SH
-```
-
-无 [just](https://github.com/casey/just) 时，直接调用脚本（路径见各 Skill 的 `SKILL.md`）：
-
-```bash
-python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
-  --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-trading/scripts/trading_status.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 ```
 
 ## 提示词怎么用
 
-1. **自然语言**：直接说下表「提示词示例」中的句子（可复制，按需改代码/数量）。
+1. **自然语言**（推荐）：直接说下表「提示词示例」中的句子。
 2. **@ Skill**：`@skills/qmt-bridge-daily-pnl/SKILL.md` 等。
-3. **命令行**：`just agent-*` 或 `python skills/.../scripts/*.py`。
+3. **命令行**（可选）：`python skills/.../scripts/*.py`（见各 Skill 的 `SKILL.md`）。
 
 写操作须用户确认，脚本加 `--execute --confirm`。仓库内同源表格：[skills/README.md](../skills/README.md)。
 
 ## 全部 Skills（含提示词）
 
-| Skill | 说明 | just 示例 | 提示词示例 |
-|-------|------|-----------|------------|
-| [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `agent-trading-status` | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
-| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `agent-daily-report` | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
-| [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `agent-portfolio-risk` | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
-| [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `agent-daily-pnl` | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
-| [qmt-bridge-order-ops](../skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `agent-list-orders` | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
-| [qmt-bridge-return-analysis](../skills/qmt-bridge-return-analysis/SKILL.md) | 累计涨幅/概率 | `agent-return-analysis` | `评估持仓涨幅概率并总结明日策略` · `1/5/10/30日阶段强弱` · `量价形态次日统计` |
-| [qmt-bridge-market-watch](../skills/qmt-bridge-market-watch/SKILL.md) | 自选快照 | `agent-watchlist` | `自选行情快照` · `盘前看下指数和自选涨跌` |
-| [qmt-bridge-sector-theme](../skills/qmt-bridge-sector-theme/SKILL.md) | 板块排序 | `agent-sector-rank` | `板块内涨幅排名` · `今天行业强弱怎么排` |
-| [qmt-bridge-financial-download](../skills/qmt-bridge-financial-download/SKILL.md) | 下载财报 | `agent-download-financial` | `下载财报到 Bridge 缓存` · `补全这几只股票的财务数据` |
-| [qmt-bridge-fundamental-screen](../skills/qmt-bridge-fundamental-screen/SKILL.md) | 财报筛选 | `agent-screen-financial` | `按 ROE、EPS 做基本面筛选` · `财报排雷` |
-| [qmt-bridge-technical-signal](../skills/qmt-bridge-technical-signal/SKILL.md) | 公式检查 | `agent-formula-check` | `用 QMT 公式检查是否金叉` · `列出可用指标/公式` |
-| [qmt-bridge-smart-execution](../skills/qmt-bridge-smart-execution/SKILL.md) | 下单预览 | `agent-execution-preview` | `预览这笔买单会不会涨跌停` · `限价还是市价更合适` |
-| [qmt-bridge-rebalance](../skills/qmt-bridge-rebalance/SKILL.md) | 再平衡 | `agent-rebalance` | `按目标权重生成调仓计划` · `组合再平衡要买卖多少` |
-| [qmt-bridge-credit-margin](../skills/qmt-bridge-credit-margin/SKILL.md) | 两融快照 | `agent-credit-snapshot` | `查两融保证金和担保品` |
-| [qmt-bridge-realtime-monitor](../skills/qmt-bridge-realtime-monitor/SKILL.md) | WS 示例 | `agent-ws-subscribe` | `WebSocket 订阅实时行情` · `盘中推送成交回报` |
-| [qmt-bridge-event-calendar](../skills/qmt-bridge-event-calendar/SKILL.md) | 交易日历 | `agent-calendar` | `今天是不是交易日` · `下一个交易日是哪天` |
-| [qmt-bridge-etf](../skills/qmt-bridge-etf/SKILL.md) | ETF | `agent-etf-snapshot` | `查 ETF 列表和申赎清单` |
-| [qmt-bridge-convertible](../skills/qmt-bridge-convertible/SKILL.md) | 可转债 | `agent-cb-snapshot` | `可转债列表和条款快照` |
-| [qmt-bridge-option](../skills/qmt-bridge-option/SKILL.md) | 期权链 | `agent-option-chain` | `查 510050 期权链` · `认沽认购合约有哪些` |
-| [qmt-bridge-hk-connect](../skills/qmt-bridge-hk-connect/SKILL.md) | 港股通 | `agent-hk-universe` | `港股通标的有哪些` · `沪港通深港通名单` |
+| Skill | 说明 | 提示词示例 |
+|-------|------|------------|
+| [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
+| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
+| [qmt-bridge-feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | 飞书云文档 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书` |
+| [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
+| [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
+| [qmt-bridge-order-ops](../skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
+| [qmt-bridge-return-analysis](../skills/qmt-bridge-return-analysis/SKILL.md) | 累计涨幅/概率 | `评估持仓涨幅概率并总结明日策略` · `1/5/10/30日阶段强弱` · `量价形态次日统计` |
+| [qmt-bridge-market-watch](../skills/qmt-bridge-market-watch/SKILL.md) | 自选快照 | `自选行情快照` · `盘前看下指数和自选涨跌` |
+| [qmt-bridge-sector-theme](../skills/qmt-bridge-sector-theme/SKILL.md) | 板块排序 | `板块内涨幅排名` · `今天行业强弱怎么排` |
+| [qmt-bridge-financial-download](../skills/qmt-bridge-financial-download/SKILL.md) | 下载财报 | `下载财报到 Bridge 缓存` · `补全这几只股票的财务数据` |
+| [qmt-bridge-fundamental-screen](../skills/qmt-bridge-fundamental-screen/SKILL.md) | 财报筛选 | `按 ROE、EPS 做基本面筛选` · `财报排雷` |
+| [qmt-bridge-technical-signal](../skills/qmt-bridge-technical-signal/SKILL.md) | 公式检查 | `用 QMT 公式检查是否金叉` · `列出可用指标/公式` |
+| [qmt-bridge-smart-execution](../skills/qmt-bridge-smart-execution/SKILL.md) | 下单预览 | `预览这笔买单会不会涨跌停` · `限价还是市价更合适` |
+| [qmt-bridge-rebalance](../skills/qmt-bridge-rebalance/SKILL.md) | 再平衡 | `按目标权重生成调仓计划` · `组合再平衡要买卖多少` |
+| [qmt-bridge-credit-margin](../skills/qmt-bridge-credit-margin/SKILL.md) | 两融快照 | `查两融保证金和担保品` |
+| [qmt-bridge-realtime-monitor](../skills/qmt-bridge-realtime-monitor/SKILL.md) | WS 示例 | `WebSocket 订阅实时行情` · `盘中推送成交回报` |
+| [qmt-bridge-event-calendar](../skills/qmt-bridge-event-calendar/SKILL.md) | 交易日历 | `今天是不是交易日` · `下一个交易日是哪天` |
+| [qmt-bridge-etf](../skills/qmt-bridge-etf/SKILL.md) | ETF | `查 ETF 列表和申赎清单` |
+| [qmt-bridge-convertible](../skills/qmt-bridge-convertible/SKILL.md) | 可转债 | `可转债列表和条款快照` |
+| [qmt-bridge-option](../skills/qmt-bridge-option/SKILL.md) | 期权链 | `查 510050 期权链` · `认沽认购合约有哪些` |
+| [qmt-bridge-hk-connect](../skills/qmt-bridge-hk-connect/SKILL.md) | 港股通 | `港股通标的有哪些` · `沪港通深港通名单` |
 
 ## 推荐工作流
 
@@ -88,16 +77,17 @@ calendar → watchlist / sector-rank
     → trading → order-ops → daily-report
 ```
 
-| 阶段 | just 命令 | 说明 | 提示词示例 |
-|------|-----------|------|------------|
-| 日历 | `agent-calendar` | 是否交易日 | `今天是不是交易日` |
-| 强弱 | `agent-return-analysis` / `agent-watchlist` | 持仓/阶段涨幅 | `评估持仓涨幅概率并总结明日策略` · `指定股票 N 日涨幅对比` |
-| 看盘 | `agent-sector-rank` | 板块 | `板块内涨幅排名` |
-| 研究 | `agent-download-financial` / `agent-screen-financial` | 财报 | `下载财报到 Bridge 缓存` · `按 ROE、EPS 做基本面筛选` |
-| 风控 | `agent-portfolio-risk` | 集中度、现金 | `组合风险快照` · `下单前现金够不够` |
-| 盈亏 | `agent-daily-pnl` | 当日盈亏表 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
-| 执行 | `agent-execution-preview` → `agent-place-order` | 预览后下单 | `预览这笔买单` · `用 Bridge 下一笔买入（先预览）` |
-| 复盘 | `agent-daily-report` | 委托/成交/操作评价 | `今日操作评估` · `生成今日交易复盘` |
+| 阶段 | 说明 | 提示词示例 |
+|------|------|------------|
+| 日历 | 是否交易日 | `今天是不是交易日` |
+| 强弱 | 持仓/阶段涨幅 | `评估持仓涨幅概率并总结明日策略` · `指定股票 N 日涨幅对比` |
+| 看盘 | 板块 | `板块内涨幅排名` |
+| 研究 | 财报 | `下载财报到 Bridge 缓存` · `按 ROE、EPS 做基本面筛选` |
+| 风控 | 集中度、现金 | `组合风险快照` · `下单前现金够不够` |
+| 盈亏 | 当日盈亏表 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
+| 执行 | 预览后下单 | `预览这笔买单` · `用 Bridge 下一笔买入（先预览）` |
+| 复盘 | 委托/成交/操作评价 | `今日操作评估` · `生成今日交易复盘` |
+| 飞书 | 复盘/盈亏/分析上传 | `同步今日复盘到飞书文档` |
 
 ## 当日盈亏（daily-pnl）
 
@@ -130,7 +120,8 @@ Skill：[qmt-bridge-return-analysis](../skills/qmt-bridge-return-analysis/SKILL.
 **1/2/3/4/5/10/30 日**累计涨幅 + **形态/量价**历史统计 + 报告末尾 **下一交易日策略与观察点**。
 
 ```bash
-just agent-return-analysis --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py \
+  --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 ```
 
 | 提示词（示例） | 说明 |
@@ -176,7 +167,5 @@ just agent-return-analysis --holdings --host 127.0.0.1 --port 8080 --api-key YOU
 ## 冒烟测试
 
 ```bash
-just test
-# 或仅 Skill 脚本导入检查
 pytest tests/test_skills_smoke.py -q
 ```

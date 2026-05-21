@@ -26,9 +26,9 @@ description: >-
 
 ```bash
 # 当前持仓一键分析（需 API Key）
-just agent-return-analysis --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
+python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 
-just agent-return-analysis --codes 000001.SZ,600519.SH --host 127.0.0.1 --port 8080
+python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py --codes 000001.SZ,600519.SH --host 127.0.0.1 --port 8080
 python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py \
   --codes 300394.SZ,688008.SH --json
 ```
@@ -48,7 +48,7 @@ python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py 
 
 ## 提示词示例（可复制）
 
-优先引导 Agent 执行 `just agent-return-analysis` 或对应 `python .../return_probability_analysis.py`。
+优先引导 Agent 执行 `skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py`（`--holdings` 或 `--codes`）。
 
 | 场景 | 提示词 |
 |------|--------|

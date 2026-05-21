@@ -2,7 +2,8 @@
 """多周期累计涨幅 + 形态/量价涨跌概率（只读）。
 
 用法:
-    just agent-return-analysis --holdings --host 127.0.0.1 --port 8080 --api-key KEY
+    python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py \\
+        --holdings --host 127.0.0.1 --port 8080 --api-key KEY
     python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py \\
         --codes 000001.SZ,600519.SH
 """

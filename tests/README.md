@@ -6,8 +6,8 @@
 
 ```bash
 pip install -e ".[server,test]"
-just test
-# 或
+python -m pytest tests/ -q
+# 或 verbose
 python -m pytest tests/ -v
 ```
 
@@ -46,9 +46,6 @@ python -m pytest tests/ -v
 $env:QMT_BRIDGE_LIVE = "1"
 $env:QMT_BRIDGE_PORT = "8080"
 $env:QMT_BRIDGE_API_KEY = "your-secret-key"   # 若已启用交易
-just test-live
-
-# 或
 QMT_BRIDGE_LIVE=1 QMT_BRIDGE_PORT=8080 python -m pytest tests/live -m live -v
 ```
 

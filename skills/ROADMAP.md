@@ -15,6 +15,7 @@
 |--------|-------|------|------|
 | P0 | [qmt-bridge-trading](qmt-bridge-trading/SKILL.md) | ✅ | `trading_status.py`, `place_order.py`, `liquidate.py` |
 | P0 | [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | ✅ | `daily_trade_report.py` |
+| P0 | [qmt-bridge-feishu-doc](qmt-bridge-feishu-doc/SKILL.md) | ✅ | 规程 + lark-cli（lark-doc / lark-drive） |
 | P0 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | ✅ | `portfolio_snapshot.py` |
 | P0 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | ✅ | `daily_pnl_snapshot.py` |
 | P0 | [qmt-bridge-order-ops](qmt-bridge-order-ops/SKILL.md) | ✅ | `list_orders.py`, `cancel_orders.py` |
@@ -33,22 +34,6 @@
 | P4 | [qmt-bridge-convertible](qmt-bridge-convertible/SKILL.md) | ⏸ | `cb_snapshot.py`（按需） |
 | P4 | [qmt-bridge-option](qmt-bridge-option/SKILL.md) | ⏸ | `option_chain_snapshot.py`（按需） |
 | P4 | [qmt-bridge-hk-connect](qmt-bridge-hk-connect/SKILL.md) | ⏸ | `hk_universe.py`（按需） |
-
-## just 快捷命令
-
-```bash
-just agent-trading-status
-just agent-daily-report
-just agent-portfolio-risk
-just agent-daily-pnl
-just agent-return-analysis --codes 000001.SZ
-just agent-list-orders
-just agent-watchlist --codes 000001.SZ
-just agent-formula-check --list
-just agent-execution-preview 000001.SZ --buy --volume 100
-```
-
-完整列表见仓库根目录 `justfile` 中 `Agent` 相关段落。
 
 ## 设计约束
 

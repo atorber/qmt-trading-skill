@@ -21,8 +21,8 @@ description: >-
 | `scripts/cancel_orders.py` | `--sysid` 或 `--cancelable-only`；`--execute --confirm` 撤单 |
 
 ```bash
-just agent-list-orders --port 8080 --api-key KEY
-just agent-cancel-orders --sysid 411494 --stock 688676.SH --execute --confirm
+python skills/qmt-bridge-order-ops/scripts/list_orders.py --host 127.0.0.1 --port 8080 --api-key KEY
+python skills/qmt-bridge-order-ops/scripts/cancel_orders.py --sysid 411494 --stock 688676.SH --execute --confirm
 ```
 
 ## 主要 API
