@@ -1,4 +1,4 @@
-# QMT Bridge
+# QMT Trading Skill
 
 > 将 miniQMT 的行情与交易能力通过 HTTP/WebSocket 接口暴露给局域网内的任意设备，让你在 Mac/Linux 上也能自由使用 A 股实时行情、历史数据和程序化交易。
 
@@ -686,6 +686,10 @@ v2.0 起支持。启用交易模块后 (`--trading`)，可通过 `/api/trading/*
 **Q: 客户端需要安装什么依赖吗？**
 
 基础客户端 (HTTP) 零依赖，仅使用 Python 标准库。如需 WebSocket 订阅功能，安装 `pip install qmt-bridge[client]` 即可。如安装了 pandas，返回结果会自动转为 DataFrame。
+
+## 感谢
+
+本项目最初 fork 自 [atompilot/qmt-bridge](https://github.com/atompilot/qmt-bridge)，在此向原作者致以感谢与敬意。
 
 ## License
 

@@ -30,6 +30,8 @@ from common import (  # noqa: E402
 from execution_review_eval import (  # noqa: E402
     build_operation_evaluation,
     fetch_eval_market_context,
+    fetch_market_turnover_history,
+    fetch_market_turnover_yi,
     format_operation_evaluation,
     operation_eval_to_dict,
 )
@@ -125,7 +127,7 @@ def main() -> int:
         type=float,
         default=None,
         metavar="YI",
-        help="两市成交额（亿元），用于交易观量能分区评价",
+        help="两市成交额（亿元）；未传时自动从指数 tick 拉取（上证+深证）",
     )
     parser.add_argument(
         "--no-philosophy-fetch",
@@ -175,8 +177,30 @@ def main() -> int:
         eval_codes = [b.stock_code for b in breakdowns if b.stock_code]
         cum3: dict[str, float | None] = {}
         index_avg: float | None = None
+        turnover_history = []
+        market_turnover_yi = args.market_turnover_yi
         if not args.no_philosophy_fetch:
-            _, cum3, index_avg = fetch_eval_market_context(client, eval_codes)
+            fetched_turnover, turnover_history, cum3, index_avg = (
+                fetch_eval_market_context(client, eval_codes)
+            )
+        else:
+            fetched_turnover = fetch_market_turnover_yi(client)
+            turnover_history = fetch_market_turnover_history(client, days=3)
+        if market_turnover_yi is None:
+            market_turnover_yi = fetched_turnover
+        if market_turnover_yi is not None:
+            print(
+                f"两市成交额（{'手动' if args.market_turnover_yi is not None else '自动'}）: "
+                f"{market_turnover_yi:,.2f} 亿元",
+                file=sys.stderr,
+            )
+        if turnover_history:
+            from trading_philosophy import format_turnover_history_line  # noqa: E402
+
+            print(
+                format_turnover_history_line(turnover_history),
+                file=sys.stderr,
+            )
         op_eval = build_operation_evaluation(
             orders=orders,
             trades=trades,
@@ -184,7 +208,8 @@ def main() -> int:
             asset=asset,
             name_map=name_map,
             cancelled_count=cancelled,
-            market_turnover_yi=args.market_turnover_yi,
+            market_turnover_yi=market_turnover_yi,
+            turnover_history=turnover_history,
             cumulative_3d_pct=cum3,
             index_avg_pct=index_avg,
             tick_map=tick_map,

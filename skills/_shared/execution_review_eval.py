@@ -11,9 +11,11 @@ from trading_philosophy import (
     IntradayRange,
     PhilosophyCheckResult,
     SLIPPAGE_SEVERE_BP,
+    TurnoverDay,
     apply_trading_philosophy,
     buy_position_in_range,
     classify_buy_timing,
+    classify_volume_zone,
     intraday_from_tick,
 )
 
@@ -54,24 +56,204 @@ class DailyOperationEval:
     stocks: list[StockOpEval] = field(default_factory=list)
 
 
+# 两市成交额：上证指数 + 深证市场（综指优先，深成指兜底）
+_TURNOVER_SH_INDEX = "000001.SH"
+_TURNOVER_SZ_INDEX = "399106.SZ"
+_TURNOVER_SZ_FALLBACK = "399001.SZ"
+
+
+def _tick_amount_yuan(tick: dict | None) -> float | None:
+    if not isinstance(tick, dict):
+        return None
+    raw = tick.get("amount")
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return val if val > 0 else None
+
+
+def _lookup_tick(tick_map: dict, code: str) -> dict | None:
+    t = tick_map.get(code) or tick_map.get(code.upper()) or tick_map.get(code.lower())
+    return t if isinstance(t, dict) else None
+
+
+def market_turnover_yi_from_tick_map(tick_map: dict) -> float | None:
+    """从指数 tick 的 amount（元）汇总两市成交额（亿元）：上证 + 深证。"""
+    if not isinstance(tick_map, dict):
+        return None
+    sh_yuan = _tick_amount_yuan(_lookup_tick(tick_map, _TURNOVER_SH_INDEX))
+    sz_yuan = _tick_amount_yuan(_lookup_tick(tick_map, _TURNOVER_SZ_INDEX))
+    if sz_yuan is None:
+        sz_yuan = _tick_amount_yuan(_lookup_tick(tick_map, _TURNOVER_SZ_FALLBACK))
+    if sh_yuan is None or sz_yuan is None:
+        return None
+    return round((sh_yuan + sz_yuan) / 1e8, 2)
+
+
+def _record_trade_date(row: dict) -> str:
+    for key in ("index", "date", "time", "datetime"):
+        raw = row.get(key)
+        if raw is None:
+            continue
+        s = str(raw).strip()
+        if s.isdigit() and len(s) >= 8:
+            return s[:8]
+        if s.isdigit() and len(s) >= 13:
+            from datetime import datetime
+
+            try:
+                return datetime.fromtimestamp(int(s[:13]) / 1000).strftime("%Y%m%d")
+            except (ValueError, OSError):
+                continue
+    return ""
+
+
+def _kline_amount_yuan_by_date(records: list[dict]) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for row in records:
+        if not isinstance(row, dict):
+            continue
+        dt = _record_trade_date(row)
+        amt = row.get("amount")
+        if not dt or amt is None:
+            continue
+        try:
+            val = float(amt)
+        except (TypeError, ValueError):
+            continue
+        if val > 0:
+            out[dt] = val
+    return out
+
+
+def _load_index_daily_records(client, code: str, count: int) -> list[dict]:
+    from kline_util import records_to_list
+
+    stocks = [code]
+    for loader in (
+        lambda: client.get_local_data(stocks=stocks, period="1d", count=count),
+        lambda: client.get_history_ex(stocks=stocks, period="1d", count=count),
+    ):
+        try:
+            raw = loader()
+            data = raw.get("data", raw) if isinstance(raw, dict) else raw
+            if not isinstance(data, dict):
+                continue
+            recs = data.get(code)
+            if recs is None:
+                recs = data.get(code.upper())
+            if recs is None:
+                continue
+            parsed = records_to_list(recs)
+            if parsed:
+                return parsed
+        except Exception:
+            continue
+    return []
+
+
+def _ensure_index_daily_cached(client, count: int) -> None:
+    """指数日 K 缺失时触发服务端下载（仅上证+深证综指）。"""
+    from datetime import date, timedelta
+
+    try:
+        end = date.today().strftime("%Y%m%d")
+        start = (date.today() - timedelta(days=count + 14)).strftime("%Y%m%d")
+        client.download_batch(
+            [_TURNOVER_SH_INDEX, _TURNOVER_SZ_INDEX],
+            period="1d",
+            start_time=start,
+            end_time=end,
+        )
+    except Exception:
+        pass
+
+
+def fetch_market_turnover_history(
+    client,
+    days: int = 3,
+) -> list[TurnoverDay]:
+    """拉取近 N 个交易日两市成交额序列（亿元）。"""
+    count = max(days + 3, 8)
+    sh_map = _kline_amount_yuan_by_date(
+        _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
+    )
+    sz_map = _kline_amount_yuan_by_date(
+        _load_index_daily_records(client, _TURNOVER_SZ_INDEX, count)
+    )
+    if not sz_map:
+        sz_map = _kline_amount_yuan_by_date(
+            _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
+        )
+    if len(set(sh_map) & set(sz_map)) < days:
+        _ensure_index_daily_cached(client, count)
+        sh_map = _kline_amount_yuan_by_date(
+            _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
+        )
+        sz_map = _kline_amount_yuan_by_date(
+            _load_index_daily_records(client, _TURNOVER_SZ_INDEX, count)
+        )
+        if not sz_map:
+            sz_map = _kline_amount_yuan_by_date(
+                _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
+            )
+
+    common = sorted(set(sh_map) & set(sz_map))[-days:]
+    result: list[TurnoverDay] = []
+    for dt in common:
+        yi = round((sh_map[dt] + sz_map[dt]) / 1e8, 2)
+        zone = classify_volume_zone(yi)
+        result.append(
+            TurnoverDay(
+                trade_date=dt,
+                turnover_yi=yi,
+                zone_label=zone.label if zone else "—",
+            )
+        )
+    return result
+
+
+def fetch_market_turnover_yi(client) -> float | None:
+    """拉取当日两市成交额（亿元）。优先 indices，缺深市时补 full_tick。"""
+    try:
+        raw_idx = client.get_major_indices()
+        if isinstance(raw_idx, dict):
+            yi = market_turnover_yi_from_tick_map(raw_idx.get("data") or {})
+            if yi is not None:
+                return yi
+    except Exception:
+        pass
+    try:
+        snap = client.get_market_snapshot(
+            [_TURNOVER_SH_INDEX, _TURNOVER_SZ_INDEX, _TURNOVER_SZ_FALLBACK]
+        )
+        return market_turnover_yi_from_tick_map(snap if isinstance(snap, dict) else {})
+    except Exception:
+        return None
+
+
 def fetch_eval_market_context(
     client,
     stock_codes: list[str],
-) -> tuple[float | None, dict[str, float | None], float | None]:
-    """拉取评价用上下文：指数均涨跌幅、各标的近 3 日累计涨幅（%）。成交额需外部传入。"""
+    turnover_days: int = 3,
+) -> tuple[float | None, list[TurnoverDay], dict[str, float | None], float | None]:
+    """拉取评价用上下文：当日成交额、近 N 日序列、近 3 日涨幅、指数均涨跌。"""
     from kline_util import cumulative_returns_pct, parse_daily_bars, records_to_list
 
+    turnover_yi: float | None = None
     index_avg: float | None = None
     try:
         raw_idx = client.get_major_indices()
         if isinstance(raw_idx, dict):
             tick_map = raw_idx.get("data") or {}
+            turnover_yi = market_turnover_yi_from_tick_map(tick_map)
             codes = raw_idx.get("indices") or []
             pcts: list[float] = []
             for code in codes:
-                t = tick_map.get(code) or tick_map.get(str(code).upper()) or {}
-                if not isinstance(t, dict):
-                    continue
+                t = _lookup_tick(tick_map, code) or {}
                 last = float(t.get("lastPrice") or t.get("lastClose") or 0)
                 prev = float(t.get("lastClose") or t.get("preClose") or 0)
                 if prev:
@@ -80,6 +262,10 @@ def fetch_eval_market_context(
                 index_avg = round(sum(pcts) / len(pcts), 2)
     except Exception:
         pass
+    if turnover_yi is None:
+        turnover_yi = fetch_market_turnover_yi(client)
+
+    turnover_history = fetch_market_turnover_history(client, days=turnover_days)
 
     cum3: dict[str, float | None] = {}
     for code in stock_codes:
@@ -101,7 +287,7 @@ def fetch_eval_market_context(
             cum3[code] = cum.get(3)
         except Exception:
             cum3[code] = None
-    return None, cum3, index_avg
+    return turnover_yi, turnover_history, cum3, index_avg
 
 
 def _pct_chg(b: DailyPnlBreakdown) -> float | None:
@@ -169,6 +355,7 @@ def build_operation_evaluation(
     name_map: dict[str, str],
     cancelled_count: int,
     market_turnover_yi: float | None = None,
+    turnover_history: list[TurnoverDay] | None = None,
     cumulative_3d_pct: dict[str, float | None] | None = None,
     index_avg_pct: float | None = None,
     tick_map: dict[str, dict] | None = None,
@@ -305,6 +492,7 @@ def build_operation_evaluation(
         order_count=result.order_count,
         cancelled_count=cancelled_count,
         market_turnover_yi=market_turnover_yi,
+        turnover_history=turnover_history,
         cumulative_3d_pct=cumulative_3d_pct,
         index_avg_pct=index_avg_pct,
         execution_notes=result.execution_notes,
@@ -342,7 +530,9 @@ def _discipline_tips(
     phil: PhilosophyCheckResult | None = None,
 ) -> list[str]:
     tips: list[str] = []
-    if phil and phil.volume_note:
+    if phil and phil.market_heat_summary:
+        tips.append(f"量能：{phil.market_heat_summary}")
+    elif phil and phil.volume_note:
         tips.append(f"量能：{phil.volume_note}")
     for s in ev.stocks:
         if s.operation_label == "逆势加仓":
@@ -379,6 +569,17 @@ def _philosophy_to_dict(p: PhilosophyCheckResult | None) -> dict | None:
     if p is None:
         return None
     return {
+        "market_turnover_yi": p.market_turnover_yi,
+        "market_heat_label": p.market_heat_label,
+        "market_heat_summary": p.market_heat_summary,
+        "turnover_history": [
+            {
+                "trade_date": d.trade_date,
+                "turnover_yi": d.turnover_yi,
+                "zone_label": d.zone_label,
+            }
+            for d in p.turnover_history
+        ],
         "volume_zone": p.volume_zone.label if p.volume_zone else None,
         "volume_note": p.volume_note,
         "sector_summary": p.sector_summary,
@@ -420,6 +621,9 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
             lines.append(f"  · 量能分区：{p.volume_zone.label} — {p.volume_zone.guidance}")
         elif p.volume_note:
             lines.append(f"  · {p.volume_note}")
+        if p.market_heat_summary:
+            label = f"【{p.market_heat_label}】" if p.market_heat_label else ""
+            lines.append(f"  · 近3日市场热度{label}：{p.market_heat_summary}")
         for a in p.aligned:
             lines.append(f"  · ✓ {a}")
 

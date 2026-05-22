@@ -158,11 +158,30 @@ class VolumeZone:
 
 
 @dataclass
+class TurnoverDay:
+    """单日两市成交额（亿元）及量能分区。"""
+
+    trade_date: str  # YYYYMMDD
+    turnover_yi: float
+    zone_label: str = ""
+
+
+# 近 N 日量能环比阈值（%）
+HEAT_TREND_UP_PCT = 5.0
+HEAT_TREND_DOWN_PCT = -8.0
+HEAT_SPIKE_PULLBACK_PCT = -10.0  # 相对近段峰值回落
+
+
+@dataclass
 class PhilosophyCheckResult:
     """交易观对照检查结果。"""
 
     volume_zone: VolumeZone | None = None
     volume_note: str = ""
+    market_turnover_yi: float | None = None
+    turnover_history: list[TurnoverDay] = field(default_factory=list)
+    market_heat_label: str = ""
+    market_heat_summary: str = ""
     sector_summary: str = ""
     aligned: list[str] = field(default_factory=list)
     violations: list[str] = field(default_factory=list)
@@ -224,6 +243,125 @@ def classify_volume_zone(turnover_yi: float | None) -> VolumeZone | None:
     )
 
 
+def format_turnover_history_line(days: list[TurnoverDay]) -> str:
+    """近 N 日两市成交额一行摘要。"""
+    if not days:
+        return ""
+    parts = []
+    for d in days:
+        md = d.trade_date[4:6] + "-" + d.trade_date[6:8] if len(d.trade_date) >= 8 else d.trade_date
+        parts.append(f"{md} {d.turnover_yi:,.0f}亿({d.zone_label})")
+    return "近{}日两市：".format(len(days)) + " → ".join(parts)
+
+
+def assess_market_heat(
+    history: list[TurnoverDay],
+    *,
+    today_yi: float | None = None,
+) -> tuple[str, str, list[str], list[str], list[TurnoverDay]]:
+    """根据连续多日成交额评估市场热度。
+
+    返回 (热度标签, 一行摘要, 符合项补充, 戒律/风险提示补充, 整理后的日序列)。
+    """
+    from datetime import date as _date
+
+    days = sorted(list(history), key=lambda d: d.trade_date)
+    if today_yi is not None and today_yi > 0:
+        today_key = _date.today().strftime("%Y%m%d")
+        zone = classify_volume_zone(today_yi)
+        zl = zone.label if zone else "—"
+        if days and days[-1].trade_date == today_key:
+            days[-1] = TurnoverDay(today_key, today_yi, zl)
+        else:
+            days.append(TurnoverDay(today_key, today_yi, zl))
+    days = days[-3:]
+    if len(days) < 2:
+        return (
+            "数据不足",
+            "近3日成交额历史不足（需先下载指数日K：000001.SH、399106.SZ）",
+            [],
+            [],
+            days,
+        )
+
+    summary = format_turnover_history_line(days)
+    aligned: list[str] = []
+    alerts: list[str] = []
+
+    active_n = sum(1 for d in days if d.turnover_yi >= TURNOVER_MODERATE_MAX_YI)
+    cautious_n = sum(1 for d in days if d.turnover_yi < TURNOVER_CAUTIOUS_MAX_YI)
+    latest = days[-1]
+    prev = days[-2]
+    chg_1d = (
+        (latest.turnover_yi - prev.turnover_yi) / prev.turnover_yi * 100
+        if prev.turnover_yi > 0
+        else 0.0
+    )
+    chg_span = (
+        (latest.turnover_yi - days[0].turnover_yi) / days[0].turnover_yi * 100
+        if days[0].turnover_yi > 0
+        else 0.0
+    )
+    peak = max(days, key=lambda d: d.turnover_yi)
+    pullback = 0.0
+    if peak.turnover_yi > 0 and latest.trade_date != peak.trade_date:
+        pullback = (latest.turnover_yi - peak.turnover_yi) / peak.turnover_yi * 100
+
+    monotonic_up = all(
+        days[i].turnover_yi < days[i + 1].turnover_yi for i in range(len(days) - 1)
+    )
+    monotonic_down = all(
+        days[i].turnover_yi > days[i + 1].turnover_yi for i in range(len(days) - 1)
+    )
+
+    heat = "温和"
+    if active_n >= len(days) and len(days) >= 3:
+        heat = "持续高热"
+        aligned.append("近3日两市均≥1.5万亿，量能维持高位，市场热度偏强")
+    elif active_n >= 2 and (monotonic_up or chg_span >= HEAT_TREND_UP_PCT):
+        heat = "热度升温"
+        aligned.append(
+            f"量能升温：最新 {latest.turnover_yi:,.0f} 亿，较近3日前 +{chg_span:.1f}%"
+        )
+    elif cautious_n >= 2:
+        heat = "市场偏冷"
+        alerts.append("近3日多数低于1万亿，市场热度偏弱，宜控仓慎追")
+    elif monotonic_down or chg_span <= HEAT_TREND_DOWN_PCT:
+        heat = "热度降温"
+        alerts.append(
+            f"量能降温：最新 {latest.turnover_yi:,.0f} 亿，较近3日前 {chg_span:+.1f}%"
+        )
+    elif (
+        len(days) >= 3
+        and peak.turnover_yi >= TURNOVER_MODERATE_MAX_YI
+        and pullback <= HEAT_SPIKE_PULLBACK_PCT
+        and latest.trade_date != peak.trade_date
+    ):
+        heat = "放量回落"
+        alerts.append(
+            f"成交额自峰值 {peak.turnover_yi:,.0f} 亿（{peak.trade_date[4:8]}）回落 {pullback:.1f}%，警惕短线过热衰减"
+        )
+    elif latest.turnover_yi >= TURNOVER_MODERATE_MAX_YI and chg_1d <= HEAT_TREND_DOWN_PCT:
+        heat = "高位缩量"
+        alerts.append(
+            f"较前日缩量 {chg_1d:+.1f}%（{prev.turnover_yi:,.0f}→{latest.turnover_yi:,.0f} 亿），高位宜谨慎"
+        )
+    elif latest.turnover_yi >= TURNOVER_MODERATE_MAX_YI:
+        heat = "高位活跃"
+        aligned.append(f"当日成交额 {latest.turnover_yi:,.0f} 亿处于活跃区，关注能否连续维持")
+    elif latest.turnover_yi < TURNOVER_CAUTIOUS_MAX_YI:
+        heat = "偏低活跃"
+        alerts.append(f"当日成交额 {latest.turnover_yi:,.0f} 亿 <1万亿，以防守与精选为主")
+
+    detail = (
+        f"{summary}；热度「{heat}」"
+        f"（较前日 {chg_1d:+.1f}%"
+        + (f"，较近3日前 {chg_span:+.1f}%" if len(days) >= 3 else "")
+        + "）"
+    )
+    return heat, detail, aligned, alerts, days
+
+
 def apply_trading_philosophy(
     *,
     stocks: list,  # StockOpEval-like: pct_chg, buy_volume, sell_volume, operation_label, ...
@@ -233,6 +371,7 @@ def apply_trading_philosophy(
     order_count: int,
     cancelled_count: int,
     market_turnover_yi: float | None = None,
+    turnover_history: list[TurnoverDay] | None = None,
     cumulative_3d_pct: dict[str, float | None] | None = None,
     index_avg_pct: float | None = None,
     execution_notes: list[str] | None = None,
@@ -243,6 +382,7 @@ def apply_trading_philosophy(
     out = PhilosophyCheckResult()
     execution_notes = execution_notes or []
 
+    out.market_turnover_yi = market_turnover_yi
     zone = classify_volume_zone(market_turnover_yi)
     out.volume_zone = zone
     if zone:
@@ -252,6 +392,17 @@ def apply_trading_philosophy(
             "未提供两市成交额（可用 --market-turnover-yi 传入，单位：亿元）；"
             "请人工对照：<1万亿谨慎、1～1.5万亿适度、≥1.5万亿且持续可积极"
         )
+
+    heat_label, heat_summary, heat_aligned, heat_alerts, resolved_days = assess_market_heat(
+        list(turnover_history or []), today_yi=market_turnover_yi
+    )
+    out.turnover_history = resolved_days
+    out.market_heat_label = heat_label
+    out.market_heat_summary = heat_summary
+    out.aligned.extend(heat_aligned)
+    out.violations.extend(heat_alerts)
+    if heat_label not in ("数据不足", "温和") and heat_summary:
+        out.discipline.append(f"市场热度：{heat_label} — 结合量能变化控制进攻节奏")
 
     sectors: dict[str, list[str]] = {s: [] for s in SECTORS}
     for st in stocks:

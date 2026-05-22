@@ -125,6 +125,9 @@ def format_operation_evaluation_md(ev: DailyOperationEval) -> str:
             lines.append(f"- 量能分区：**{p.volume_zone.label}** — {p.volume_zone.guidance}")
         elif p.volume_note:
             lines.append(f"- {p.volume_note}")
+        if p.market_heat_summary:
+            heat = f"**{p.market_heat_label}** — " if p.market_heat_label else ""
+            lines.append(f"- 近3日市场热度：{heat}{p.market_heat_summary}")
         for a in p.aligned:
             lines.append(f"- ✓ {a}")
 
