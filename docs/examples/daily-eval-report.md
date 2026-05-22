@@ -13,7 +13,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 
 ---
 
-# QMT Bridge 当日复盘 2026-05-22 16:**:**:**
+# QMT Trading Skill 当日复盘 2026-05-22 16:**:**:**
 
 **交易日**：2026-05-22  
 **同步时间**：2026-05-22 16:**:**:**  

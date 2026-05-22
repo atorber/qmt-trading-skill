@@ -5,7 +5,7 @@ description: >-
   在用户提到今日盈亏、当日收益、赚了多少、盘面盈亏时使用。只读。
 ---
 
-# QMT Bridge 当日盈亏 Skill
+# QMT Trading Skill · 当日盈亏
 
 > **实现状态**：✅ `daily_pnl_snapshot.py` 可用（见 [ROADMAP.md](../ROADMAP.md)）
 

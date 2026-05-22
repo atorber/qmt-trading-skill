@@ -1,6 +1,6 @@
 # Skills 实现路线图
 
-各 Skill 的 `SKILL.md` 与可执行脚本已对齐；共享模块见 [`_shared/`](_shared/)。
+**QMT Trading Skill** 的 Agent Skills 层；底层 API 为 **QMT Bridge**。各 Skill 的 `SKILL.md` 与可执行脚本已对齐；共享模块见 [`_shared/`](_shared/)。
 
 ## 实现状态图例
 

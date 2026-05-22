@@ -5,7 +5,7 @@ description: >-
   在用户提到调仓、再平衡、目标仓位、权重对齐时使用。提交须用户确认。
 ---
 
-# QMT Bridge 组合再平衡 Skill
+# QMT Trading Skill · 组合再平衡
 
 > **实现状态**：✅ `rebalance_plan.py` 可用
 

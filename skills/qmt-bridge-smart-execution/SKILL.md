@@ -5,7 +5,7 @@ description: >-
   在用户提到怎么下单、限价还是市价、分批、滑点、执行方案时使用。默认预览，提交须确认。
 ---
 
-# QMT Bridge 智能执行 Skill
+# QMT Trading Skill · 智能执行
 
 > **实现状态**：✅ `execution_preview.py` 可用
 

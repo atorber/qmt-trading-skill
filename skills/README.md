@@ -1,6 +1,6 @@
 # Agent Skills
 
-本目录包含与 **QMT Bridge** 配套的 [Agent Skills](https://docs.cursor.com/context/skills)。**21 个 Skill** 均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
+本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **21 个**，均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
 
 在线文档：[Agent Skills](../docs/agent-skills.md)
 

@@ -5,7 +5,7 @@ description: >-
   在用户提到港股通、沪港通、深港通、港股标的时使用。只读。
 ---
 
-# QMT Bridge 港股通 Skill
+# QMT Trading Skill · 港股通
 
 > **实现状态**：✅ `hk_universe.py` 可用
 

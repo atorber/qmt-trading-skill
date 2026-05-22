@@ -28,7 +28,7 @@ def render_sidebar():
     """渲染侧边栏连接配置并返回 client（可能为 None）。"""
     cfg = _load_config()
 
-    st.sidebar.title("QMT Bridge")
+    st.sidebar.title("QMT Trading Skill")
     host = st.sidebar.text_input("服务地址", value=cfg.get("host", "127.0.0.1"), key="_sb_host")
     port = st.sidebar.number_input(
         "端口", value=cfg.get("port", 8000), min_value=1, max_value=65535, step=1, key="_sb_port"

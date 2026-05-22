@@ -5,7 +5,7 @@ description: >-
   在用户提到 WebSocket 订阅、盘中推送、成交回报、实时盯盘时使用。规程为主。
 ---
 
-# QMT Bridge 实时监控 Skill
+# QMT Trading Skill · 实时监控
 
 > **实现状态**：✅ `ws_subscribe.py` + WebSocket 规程
 

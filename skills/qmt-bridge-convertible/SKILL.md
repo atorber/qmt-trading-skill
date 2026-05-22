@@ -5,7 +5,7 @@ description: >-
   在用户提到可转债、转债、强赎、转股时使用。只读。
 ---
 
-# QMT Bridge 可转债 Skill
+# QMT Trading Skill · 可转债
 
 > **实现状态**：✅ `cb_snapshot.py` 可用
 

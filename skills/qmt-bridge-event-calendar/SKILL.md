@@ -5,7 +5,7 @@ description: >-
   在用户提到是否交易日、节假日、交易时间、财报日、日历时使用。只读。
 ---
 
-# QMT Bridge 事件日历 Skill
+# QMT Trading Skill · 事件日历
 
 > **实现状态**：✅ `calendar_check.py` 可用
 

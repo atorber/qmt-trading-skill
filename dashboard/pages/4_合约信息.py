@@ -9,7 +9,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _sidebar import require_client
 
-st.set_page_config(page_title="合约信息 - QMT Bridge", layout="wide")
+st.set_page_config(page_title="合约信息 - QMT Trading Skill", layout="wide")
 st.title("合约信息")
 
 client = require_client()

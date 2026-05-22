@@ -5,7 +5,7 @@ description: >-
   刷新 Pershareindex、下载 ROE 数据、财报缓存时使用；筛选指标请用 fundamental-screen。
 ---
 
-# QMT Bridge 财报下载 Skill
+# QMT Trading Skill · 财报下载
 
 > **实现状态**：✅ `download_financial_data.py`
 

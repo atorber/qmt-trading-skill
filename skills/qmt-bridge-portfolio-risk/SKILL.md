@@ -5,7 +5,7 @@ description: >-
   在用户提到仓位风险、集中度、组合敞口、下单前风控检查时使用。只读。
 ---
 
-# QMT Bridge 组合风险 Skill
+# QMT Trading Skill · 组合风险
 
 > **实现状态**：✅ `portfolio_snapshot.py` 可用
 

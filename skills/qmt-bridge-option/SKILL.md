@@ -5,7 +5,7 @@ description: >-
   在用户提到期权、期权链、认沽认购、对冲时使用。只读。
 ---
 
-# QMT Bridge 期权 Skill
+# QMT Trading Skill · 期权
 
 > **实现状态**：✅ `option_chain_snapshot.py` 可用
 

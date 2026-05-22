@@ -5,7 +5,7 @@ description: >-
   在用户提到两融、融资融券、保证金、信用账户时使用。按需启用；写操作须确认。
 ---
 
-# QMT Bridge 两融信用 Skill
+# QMT Trading Skill · 两融信用
 
 > **实现状态**：✅ `credit_snapshot.py` 可用（需两融账户）
 

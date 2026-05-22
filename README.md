@@ -1,8 +1,8 @@
 # QMT Trading Skill
 
-> 将 miniQMT 的行情与交易能力通过 HTTP/WebSocket 接口暴露给局域网内的任意设备，让你在 Mac/Linux 上也能自由使用 A 股实时行情、历史数据和程序化交易。
+> **QMT Trading Skill** = **QMT Bridge**（HTTP/WebSocket API）+ **Agent Skills**（自然语言工作流）。在 Windows 对接 miniQMT，在 Mac/Linux 用对话完成行情、交易、复盘与飞书报告同步。
 
-**QMT Bridge** is a lightweight API server that wraps [xtquant](https://dict.thinktrader.net/nativeApi/start_now.html) (the Python library behind miniQMT) and exposes market data & trading as standard HTTP/WebSocket endpoints. It runs on your Windows machine alongside the QMT client, allowing any device on your local network — Mac, Linux, or mobile — to access real-time quotes, historical K-lines, sector data, trading, and more.
+**QMT Trading Skill** bundles a lightweight **QMT Bridge** API server (wraps [xtquant](https://dict.thinktrader.net/nativeApi/start_now.html) / miniQMT) with **21 Agent Skills** for Cursor / Claude Code. Bridge runs on Windows beside the QMT client; any device on your LAN — Mac, Linux, or mobile — calls the API, while Skills turn natural language into scripted workflows (trading, daily P&amp;L, execution review, Feishu sync, and more).
 
 ```
 Mac / Linux (主力机)                    Windows (中转站)
@@ -17,7 +17,7 @@ Mac / Linux (主力机)                    Windows (中转站)
 
 miniQMT / xtquant 只能在 Windows 上运行，且必须依赖 QMT 客户端保持登录。如果你的主力开发机是 Mac 或 Linux，就无法直接调用 xtquant。
 
-QMT Bridge 解决这个问题：Windows 电脑作为数据中转站，运行 QMT 客户端 + 本项目的 API 服务；你的 Mac/Linux 通过局域网 HTTP/WebSocket 请求获取所有数据，也可以远程下单。核心代码、数据库、分析逻辑全部在你自己的主力机上运行。
+QMT Trading Skill 解决这个问题：**Bridge 层**在 Windows 运行 QMT 客户端 + `qmt-server`；**Skill 层**在你的 Mac/Linux 上通过自然语言调用 Bridge（持仓、盈亏、复盘、风控等）。核心分析逻辑与数据库仍在你自己的主力机上运行。
 
 ## Features
 
@@ -27,7 +27,7 @@ QMT Bridge 解决这个问题：Windows 电脑作为数据中转站，运行 QMT
 - **零依赖客户端** — Python 客户端基于 stdlib，无需安装 xtquant 即可在任意平台使用
 - **API Key 认证** — 可选的 API Key 保护，交易端点强制认证
 - **自动预下载** — 服务启动时自动下载板块、日历、指数权重等基础数据，之后每日定时刷新，客户端无需手动触发
-- **Agent Skills** — 仓库内置 **21 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），自然语言或 `@` Skill 触发，由 Agent 执行脚本
+- **Agent Skills（QMT Trading Skill）** — 仓库内置 **21 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），自然语言或 `@` Skill 触发，由 Agent 执行脚本
 
 ## Prerequisites
 
@@ -542,7 +542,7 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 
 | 方式 | 说明 |
 |------|------|
-| **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-bridge/`（上游示例：<https://atorber.github.io/qmt-bridge/>） |
+| **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-trading-skill/`（上游示例：<https://atorber.github.io/qmt-trading-skill/>） |
 | **本地 MkDocs** | `pip install -e ".[docs]" && mkdocs serve -a 127.0.0.1:8001` |
 | **运行时 Swagger** | 服务启动后访问 `/docs` 或 `/redoc` |
 
@@ -550,7 +550,7 @@ curl -X POST http://192.168.1.100:8000/api/trading/order \
 
 ## Agent Skills
 
-仓库 [`skills/`](skills/) 发布 **21 个**与 REST API 配套的 Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 等在对话中按自然语言调用 Bridge。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)；**提示词示例**见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
+**QMT Trading Skill** 在 [`skills/`](skills/) 发布 **21 个** Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 按自然语言调用 **QMT Bridge** REST API。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)；**提示词示例**见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
 
 ### 分类概览
 
@@ -655,7 +655,7 @@ python -m pytest tests/live -m live -v
 
 ## Authentication
 
-QMT Bridge 支持可选的 API Key 认证机制：
+QMT Bridge（API 服务）支持可选的 API Key 认证机制：
 
 - **交易端点** (`/api/trading/*`, `/api/credit/*`, `/api/fund/*`, `/api/bank/*`) — 设置了 `API_KEY` 时强制认证
 - **数据端点** — 默认无需认证，可通过 `QMT_BRIDGE_REQUIRE_AUTH_FOR_DATA=true` 开启

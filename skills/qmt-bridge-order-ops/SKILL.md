@@ -5,7 +5,7 @@ description: >-
   在用户提到撤单、取消委托、查挂单、可撤订单、错单处理时使用。写操作须用户确认。
 ---
 
-# QMT Bridge 委托运维 Skill
+# QMT Trading Skill · 委托运维
 
 > **实现状态**：✅ `list_orders.py`、`cancel_orders.py` 可用
 

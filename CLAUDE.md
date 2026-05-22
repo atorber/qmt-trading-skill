@@ -4,7 +4,7 @@
 
 ## 项目概览
 
-QMT Bridge：将 miniQMT (xtquant) 的行情与交易能力通过 HTTP/WebSocket 暴露给局域网设备。
+**QMT Trading Skill**：QMT Bridge（HTTP/WebSocket API）+ Agent Skills（`skills/` 自然语言工作流），对接 miniQMT (xtquant)。
 
 - **语言**: Python 3.10+
 - **构建**: hatchling (pyproject.toml)

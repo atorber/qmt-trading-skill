@@ -3,10 +3,10 @@ name: qmt-bridge-trading
 description: >-
   通过 QMT Bridge HTTP API 执行证券交易：持仓/资产/委托查询、单笔与批量下单、撤单、清仓。
   在用户提到 qmt-bridge 交易、下单、持仓、清仓、撤单、查询资产，或需操作 miniQMT 账户时使用。
-  本文件随 qmt-bridge 仓库发布于 skills/qmt-bridge-trading/SKILL.md。
+  本文件随 QMT Trading Skill（qmt-bridge 仓库）发布于 skills/qmt-bridge-trading/SKILL.md。
 ---
 
-# QMT Bridge 交易 Skill
+# QMT Trading Skill · 交易
 
 > **发布位置**：`qmt-bridge` 仓库 `skills/qmt-bridge-trading/SKILL.md`。集成说明见 [`skills/README.md`](../README.md)、[路线图](../ROADMAP.md) 与文档 [agent-skills.md](../../docs/agent-skills.md)。相关 Skill：复盘 [execution-review](../qmt-bridge-execution-review/SKILL.md)、风控 [portfolio-risk](../qmt-bridge-portfolio-risk/SKILL.md)、撤单 [order-ops](../qmt-bridge-order-ops/SKILL.md)。
 
