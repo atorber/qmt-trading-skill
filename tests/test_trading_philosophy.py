@@ -9,7 +9,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "_shared
 
 from trading_philosophy import (  # noqa: E402
     IntradayRange,
+    TurnoverDay,
     apply_trading_philosophy,
+    assess_market_heat,
     classify_buy_timing,
     classify_sector,
     classify_volume_zone,
@@ -25,6 +27,30 @@ class _Stock:
 def test_classify_sector():
     assert classify_sector("300394.SZ", "天孚通信") == "科技"
     assert classify_sector("601318.SH", "中国平安") == "大金融"
+
+
+def test_assess_market_heat_sustained():
+    hist = [
+        TurnoverDay("20260520", 16000, "≥1.5万亿区"),
+        TurnoverDay("20260521", 17000, "≥1.5万亿区"),
+        TurnoverDay("20260522", 16500, "≥1.5万亿区"),
+    ]
+    label, summary, aligned, alerts, days = assess_market_heat(hist)
+    assert label == "持续高热"
+    assert len(days) == 3
+    assert aligned
+    assert not alerts
+
+
+def test_assess_market_heat_cooling():
+    hist = [
+        TurnoverDay("20260520", 18000, "≥1.5万亿区"),
+        TurnoverDay("20260521", 15000, "≥1.5万亿区"),
+        TurnoverDay("20260522", 9000, "谨慎区"),
+    ]
+    label, _, _, alerts, _ = assess_market_heat(hist)
+    assert label in ("热度降温", "市场偏冷", "放量回落", "高位缩量", "偏低活跃")
+    assert alerts
 
 
 def test_volume_zone():

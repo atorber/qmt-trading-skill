@@ -7,8 +7,51 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills" / "_shared"))
 
-from execution_review_eval import build_operation_evaluation  # noqa: E402
+from execution_review_eval import (  # noqa: E402
+    build_operation_evaluation,
+    market_turnover_yi_from_tick_map,
+)
 from pnl_util import DailyPnlBreakdown, TradeDaySummary  # noqa: E402
+
+
+def test_kline_amount_yuan_by_date_from_records():
+    from execution_review_eval import _kline_amount_yuan_by_date  # noqa: E402
+
+    recs = [{"index": "20260522", "amount": 1_200_000_000_000}]
+    assert _kline_amount_yuan_by_date(recs) == {"20260522": 1_200_000_000_000.0}
+
+
+def test_market_turnover_yi_from_tick_map():
+    tick_map = {
+        "000001.SH": {"amount": 1_200_000_000_000},
+        "399106.SZ": {"amount": 800_000_000_000},
+    }
+    assert market_turnover_yi_from_tick_map(tick_map) == 20000.0
+
+    assert market_turnover_yi_from_tick_map({}) is None
+    assert market_turnover_yi_from_tick_map({"000001.SH": {"amount": 100}}) is None
+
+    fallback = {
+        "000001.SH": {"amount": 1_000_000_000_000},
+        "399001.SZ": {"amount": 500_000_000_000},
+    }
+    assert market_turnover_yi_from_tick_map(fallback) == 15000.0
+
+
+def test_build_operation_evaluation_with_turnover():
+    ev = build_operation_evaluation(
+        orders=[],
+        trades=[],
+        breakdowns=[],
+        asset={"total_asset": 1_000_000, "cash": 100_000},
+        name_map={},
+        cancelled_count=0,
+        market_turnover_yi=12500.0,
+    )
+    assert ev.philosophy is not None
+    assert ev.philosophy.market_turnover_yi == 12500.0
+    assert ev.philosophy.volume_zone is not None
+    assert ev.philosophy.volume_zone.label == "适度参与区"
 
 
 def test_build_operation_evaluation():

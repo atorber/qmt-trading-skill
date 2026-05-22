@@ -37,8 +37,8 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 | `--no-trades` | 跳过成交列表 |
 | `--no-summary` | 跳过按标的汇总 |
 | `--no-eval` | 不输出操作评价 |
-| `--market-turnover-yi` | 两市成交额（亿元），量能分区评价 |
-| `--no-philosophy-fetch` | 不拉指数/近3日涨幅（仅用当日 tick） |
+| `--market-turnover-yi` | 两市成交额（亿元）；未传时自动从 Bridge 指数 tick 拉取 |
+| `--no-philosophy-fetch` | 不拉近3日涨幅；仍会自动拉两市成交额与指数涨跌 |
 
 ## 提示词示例（可复制）
 
@@ -86,7 +86,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
   --host 127.0.0.1 --port 8080 --api-key KEY --market-turnover-yi 12500
 ```
 
-未传入时提示人工对照万亿阈值；指数均涨跌幅与近 3 日累计涨幅默认自动拉取（可用 `--no-philosophy-fetch` 关闭）。
+两市成交额默认自动拉取（上证 `000001.SH` + 深证 `399106.SZ`，缺则用 `399001.SZ` 的 tick `amount` 汇总）；可用 `--market-turnover-yi` 覆盖。**近 3 日市场热度**由指数日 K 自动汇总并写入评价。近 3 日个股涨幅可用 `--no-philosophy-fetch` 关闭（不影响量能序列拉取）。
 
 ## 安全
 
