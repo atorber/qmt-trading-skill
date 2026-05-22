@@ -107,7 +107,7 @@ qmt-server --port 8080 --trading   # 示例：启动 Bridge
 !!! tip "客户端地址"
     服务端监听可用 `QMT_BRIDGE_HOST=0.0.0.0`；Agent 脚本连接请用 **`127.0.0.1`**（或局域网 IP），不要写 `0.0.0.0`。
 
-提示词示例：`今天账户盈亏多少`、`生成今日交易复盘`、`把今日复盘同步到飞书`。完整表见 [skills/README.md](../skills/README.md) 或 [Agent Skills](agent-skills.md)。开发用命令见 [开发指南](development.md)。
+提示词示例：`今天账户盈亏多少`、`生成今日交易复盘`、`把今日复盘同步到飞书`。完整表见 [skills/README.md](../skills/README.md) 或 [Agent Skills](agent-skills.md)。**复盘报告示例**（脱敏）：[每日复盘报告示例](examples/daily-eval-report.md)。开发用命令见 [开发指南](development.md)。
 
 ## Python 客户端用法
 

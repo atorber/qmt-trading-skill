@@ -30,6 +30,7 @@ Mac / Linux (主力机)                    Windows (中转站)
 | [配置参考](configuration.md) | 所有配置项详解 |
 | [开发指南](development.md) | pip / pytest / 脚本路径速查 |
 | [Agent Skills](agent-skills.md) | Skill 列表、**提示词示例**、当日盈亏、工作流 |
+| [每日复盘报告示例](examples/daily-eval-report.md) | 复盘+飞书 Markdown 结构示例（金额已脱敏） |
 | [REST API 速查](rest-api.md) | 全部 HTTP 端点列表 |
 | [WebSocket](websocket.md) | WebSocket 端点使用指南 |
 | [Python 客户端 API](api/index.md) | `QMTClient` 完整 API 参考 |
