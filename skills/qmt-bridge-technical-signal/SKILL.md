@@ -5,7 +5,7 @@ description: >-
   在用户提到技术指标、公式、MA、MACD、信号确认、QMT 指标时使用。只读。
 ---
 
-# QMT Bridge 技术信号 Skill
+# QMT Trading Skill · 技术信号
 
 > **实现状态**：✅ `formula_check.py` 可用
 

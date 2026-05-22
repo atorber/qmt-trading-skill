@@ -1,10 +1,10 @@
-"""QMT Bridge 可视化仪表盘 — 入口页面 + 侧边栏连接配置。"""
+"""QMT Trading Skill 可视化仪表盘 — 入口页面 + 侧边栏连接配置（调用 QMT Bridge API）。"""
 
 import streamlit as st
 from _sidebar import render_sidebar
 
 st.set_page_config(
-    page_title="QMT Bridge 仪表盘",
+    page_title="QMT Trading Skill 仪表盘",
     page_icon="📊",
     layout="wide",
 )
@@ -13,10 +13,10 @@ render_sidebar()
 
 # ── 首页内容 ──────────────────────────────────────────────────────
 
-st.title("QMT Bridge 可视化仪表盘")
+st.title("QMT Trading Skill 可视化仪表盘")
 
 st.markdown("""
-**QMT Bridge** 是 miniQMT (xtquant) 的 HTTP/WebSocket API 桥接服务，
+**QMT Trading Skill** 包含 **QMT Bridge**（miniQMT / xtquant 的 HTTP/WebSocket API）与 Agent Skills；本仪表盘连接 Bridge 服务，
 让任意设备（Mac、Linux、手机）通过网络访问实时行情、历史数据和交易功能。
 
 本仪表盘提供可视化界面，方便浏览行情数据、管理交易、查看系统状态。

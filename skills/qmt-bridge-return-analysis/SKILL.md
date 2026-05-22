@@ -6,7 +6,7 @@ description: >-
   在用户提到持仓阶段强弱、N日涨幅、涨跌概率、量价、明日怎么观察时使用。只读。
 ---
 
-# QMT Bridge 累计涨幅与涨跌概率 Skill
+# QMT Trading Skill · 累计涨幅与涨跌概率
 
 > **实现状态**：✅ `return_probability_analysis.py` 可用
 

@@ -5,7 +5,7 @@ description: >-
   在用户提到板块轮动、主题、行业强弱、成分股排名时使用。只读。
 ---
 
-# QMT Bridge 板块主题 Skill
+# QMT Trading Skill · 板块主题
 
 > **实现状态**：✅ `sector_rank.py`
 

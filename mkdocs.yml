@@ -1,8 +1,8 @@
-site_name: QMT Bridge 文档
-site_description: miniQMT 行情与交易 HTTP/WebSocket 桥接
+site_name: QMT Trading Skill 文档
+site_description: QMT Bridge API + Agent Skills — miniQMT 行情与交易
 # CI 通过 MKDOCS_SITE_URL 注入；本地默认 8001 预览地址
 site_url: !ENV [MKDOCS_SITE_URL, 'http://127.0.0.1:8001/']
-repo_url: https://github.com/atorber/qmt-bridge
+repo_url: https://github.com/atorber/qmt-trading-skill
 edit_uri: edit/main/docs/
 
 theme:

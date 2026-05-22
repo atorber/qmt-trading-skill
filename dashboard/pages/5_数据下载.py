@@ -8,7 +8,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _sidebar import require_client
 
-st.set_page_config(page_title="数据下载 - QMT Bridge", layout="wide")
+st.set_page_config(page_title="数据下载 - QMT Trading Skill", layout="wide")
 st.title("数据下载")
 
 client = require_client()

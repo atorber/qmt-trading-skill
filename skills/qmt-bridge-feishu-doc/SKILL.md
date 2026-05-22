@@ -1,12 +1,12 @@
 ---
 name: qmt-bridge-feishu-doc
 description: >-
-  将 QMT Bridge 复盘/盈亏/分析报告同步到飞书云文档：规定云空间目录与标题命名，
+  将 QMT Trading Skill 复盘/盈亏/分析报告同步到飞书云文档：规定云空间目录与标题命名，
   通过官方 lark-cli 与 lark-doc、lark-drive、lark-shared Skill 完成（不用仓库 scripts/ 飞书脚本）。
   在用户提到上传飞书、同步复盘文档、飞书云文档时使用。
 ---
 
-# QMT Bridge 飞书云文档 Skill
+# QMT Trading Skill · 飞书云文档
 
 > **实现状态**：规程 + [doc-registry.md](references/doc-registry.md)；IO 走 **[lark-cli](https://github.com/larksuite/cli)** 官方 CLI
 
@@ -35,7 +35,7 @@ lark-cli auth status
 ## 云空间目录
 
 ```
-QMT Bridge/
+QMT Trading Skill/
 ├── 每日复盘/      ← daily-eval
 ├── 盈亏快照/      ← daily-pnl
 ├── 涨跌分析/      ← return-analysis
@@ -90,7 +90,7 @@ doc token：`reports/feishu_doc_ids.json` 或 `FEISHU_*_DOC_ID`。
 
 ## 标题规范（摘要）
 
-`QMT Bridge 当日复盘 2026-05-21 15:30:00` — 见 doc-registry。
+`QMT Trading Skill 当日复盘 2026-05-21 15:30:00` — 见 doc-registry。
 
 ## 安全
 

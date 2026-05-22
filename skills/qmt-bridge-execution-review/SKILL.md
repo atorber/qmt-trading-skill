@@ -6,7 +6,7 @@ description: >-
   在用户提到今日成交、交易复盘、今日操作评估、执行质量、交易观时使用。只读。
 ---
 
-# QMT Bridge 交易复盘 Skill
+# QMT Trading Skill · 交易复盘
 
 > **实现状态**：✅ `daily_trade_report.py` 可用（见 [ROADMAP.md](../ROADMAP.md)）
 

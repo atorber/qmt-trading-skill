@@ -1,5 +1,7 @@
 # 快速开始
 
+**QMT Trading Skill** 包含两层：**QMT Bridge**（Windows 上运行 `qmt-server`）与 **Agent Skills**（在主力机用自然语言调用 Bridge）。以下先启动 Bridge，再使用 `skills/` 工作流。
+
 ## 前提条件
 
 ### Windows 端（服务端）

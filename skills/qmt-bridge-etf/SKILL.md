@@ -5,7 +5,7 @@ description: >-
   在用户提到 ETF、申赎、指数基金、ETF 套利时使用。只读。
 ---
 
-# QMT Bridge ETF Skill
+# QMT Trading Skill · ETF
 
 > **实现状态**：✅ `etf_snapshot.py` 可用
 

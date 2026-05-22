@@ -1,39 +1,40 @@
-# QMT Bridge
+# QMT Trading Skill
 
-> 将 miniQMT 的行情与交易能力通过 HTTP/WebSocket 接口暴露给局域网内的任意设备，让你在 Mac/Linux 上也能自由使用 A 股实时行情、历史数据和程序化交易。
+> **QMT Trading Skill** = **QMT Bridge**（HTTP/WebSocket API）+ **Agent Skills**（自然语言工作流）。在 Windows 上对接 miniQMT，在 Mac/Linux 上用对话完成行情、交易、复盘与报告同步。
 
-**QMT Bridge** 是一个轻量级 API 服务，封装了 [xtquant](https://dict.thinktrader.net/nativeApi/start_now.html)（miniQMT 的 Python 库），将行情数据和交易功能以标准 HTTP/WebSocket 端点暴露出来。它运行在你的 Windows 机器上（QMT 客户端旁），允许局域网内任何设备（Mac、Linux 或手机）访问实时行情、历史 K 线、板块数据、交易等功能。
+**QMT Bridge** 是其中的 API 服务层：封装 [xtquant](https://dict.thinktrader.net/nativeApi/start_now.html)（miniQMT 的 Python 库），将行情与交易以标准 HTTP/WebSocket 端点暴露；运行于 QMT 客户端旁的 Windows 机器，供局域网内任意设备访问。
 
 ```
 Mac / Linux (主力机)                    Windows (中转站)
 ┌──────────────────────┐                ┌─────────────────────────┐
-│  你的分析 / 交易代码    │   HTTP/WS     │  miniQMT 客户端 (登录中)  │
+│  Agent / 分析代码       │   HTTP/WS     │  miniQMT 客户端 (登录中)  │
 │  本地数据库            │ ◄───────────► │  QMT Bridge (FastAPI)    │
 │  可视化仪表盘          │   局域网       │  xtquant                 │
 └──────────────────────┘                └─────────────────────────┘
+         ▲
+         │ 自然语言触发 skills/*.py
+         └─ QMT Trading Skill（21 个 Agent Skills）
 ```
 
 ## 核心特性
 
-- **100+ REST API 端点** — 历史 K 线、实时行情、L2 逐笔、板块管理、财务数据、指数权重、期权链、可转债、ETF、港股通、期货主力合约等
-- **5 个 WebSocket 端点** — 实时行情推送、全市场行情、L2 千档、下载进度、交易回报
-- **程序化交易** (可选) — 下单、撤单、批量委托、融资融券、银证转账、智能交易
-- **零依赖客户端** — Python 客户端基于 stdlib，无需安装 xtquant 即可在任意平台使用
-- **API Key 认证** — 可选的 API Key 保护，交易端点强制认证
-- **Agent Skills** — 21 个 Skill，自然语言触发（含累计涨幅与涨跌概率、当日盈亏、交易复盘、组合风险等）
+- **QMT Bridge** — 100+ REST API、5 个 WebSocket；历史 K 线、L2、板块、财务、期权、可转债、ETF、港股通、期货、程序化交易等
+- **Agent Skills** — 21 个 Skill，自然语言或 `@` 触发（当日盈亏、交易复盘、组合风险、涨跌概率、飞书同步等）
+- **零依赖客户端** — `QMTClient` 基于 stdlib，跨平台调用 Bridge
+- **API Key 认证** — 交易端点可强制认证
 
 ## 快速导航
 
 | 文档 | 说明 |
 |------|------|
-| [快速开始](getting-started.md) | 安装、配置、启动服务 |
-| [配置参考](configuration.md) | 所有配置项详解 |
+| [快速开始](getting-started.md) | 安装、配置、启动 Bridge |
+| [配置参考](configuration.md) | Bridge 环境变量与 CLI |
 | [开发指南](development.md) | pip / pytest / 脚本路径速查 |
-| [Agent Skills](agent-skills.md) | Skill 列表、**提示词示例**、当日盈亏、工作流 |
+| [Agent Skills](agent-skills.md) | Skill 列表、**提示词示例**、工作流 |
 | [每日复盘报告示例](examples/daily-eval-report.md) | 复盘+飞书 Markdown 结构示例（金额已脱敏） |
-| [REST API 速查](rest-api.md) | 全部 HTTP 端点列表 |
-| [WebSocket](websocket.md) | WebSocket 端点使用指南 |
-| [Python 客户端 API](api/index.md) | `QMTClient` 完整 API 参考 |
+| [REST API 速查](rest-api.md) | Bridge HTTP 端点列表 |
+| [WebSocket](websocket.md) | Bridge WebSocket 端点 |
+| [Python 客户端 API](api/index.md) | `QMTClient` 参考 |
 
 ## 安装
 

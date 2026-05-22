@@ -5,7 +5,7 @@ description: >-
   在用户提到看盘、自选监控、盘前检查、行情快照、大盘环境时使用。只读，不下单。
 ---
 
-# QMT Bridge 自选监控 Skill
+# QMT Trading Skill · 自选监控
 
 > **实现状态**：✅ `watchlist_snapshot.py`
 

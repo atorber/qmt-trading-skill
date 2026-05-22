@@ -30,7 +30,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 - `--feishu-md`：写入 `reports/feishu_daily_eval.md`（UTF-8）
 - `--feishu-md /path/to/custom.md`：指定路径
 - 与 `--json` 可并存；**同步飞书前必须先有本步骤产物**
-- H1 / 云文档标题由 `feishu_doc.format_title` 生成，例：`# QMT Bridge 当日复盘 2026-05-22 14:30:00`
+- H1 / 云文档标题由 `feishu_doc.format_title` 生成，例：`# QMT Trading Skill 当日复盘 2026-05-22 14:30:00`
 
 ## 2. 正文来源（禁止手写）
 
@@ -80,7 +80,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 
 ```bash
 lark-cli wiki +node-create --as user \
-  --title "QMT Bridge 当日复盘 2026-05-22 14:30:00"
+  --title "QMT Trading Skill 当日复盘 2026-05-22 14:30:00"
 
 lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
   --command overwrite --doc-format markdown \
@@ -94,7 +94,7 @@ lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
 ```bash
 lark-cli wiki +node-create --as user \
   --parent-node-token PARENT_WIKI_TOKEN \
-  --title "QMT Bridge 当日复盘 2026-05-22 14:30:00"
+  --title "QMT Trading Skill 当日复盘 2026-05-22 14:30:00"
 
 lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
   --command overwrite --doc-format markdown \
@@ -106,7 +106,7 @@ lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
 ```bash
 lark-cli docs +create --api-version v2 --doc-format markdown --as user \
   --folder-token FEISHU_FOLDER_DAILY_EVAL_TOKEN \
-  --title "QMT Bridge 当日复盘 2026-05-22 14:30:00" \
+  --title "QMT Trading Skill 当日复盘 2026-05-22 14:30:00" \
   --content @reports/feishu_daily_eval.md
 ```
 

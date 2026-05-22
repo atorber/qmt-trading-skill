@@ -1,6 +1,6 @@
 # 开发指南
 
-常用命令均在仓库根目录执行。人类使用 Agent Skill 时**优先自然语言 + `@skills/.../SKILL.md`**，由 Agent 调用 `skills/*/scripts/*.py`；本节命令主要供开发与 Agent 终端参考。
+**QMT Trading Skill** = QMT Bridge（`qmt-server` / `QMTClient`）+ `skills/` 脚本。常用命令均在仓库根目录执行。人类使用 Agent Skill 时**优先自然语言 + `@skills/.../SKILL.md`**，由 Agent 调用 `skills/*/scripts/*.py`；本节命令主要供开发与 Agent 终端参考。
 
 ## 安装与依赖
 

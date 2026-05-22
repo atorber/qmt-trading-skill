@@ -1,6 +1,6 @@
 # Agent Skills
 
-QMT Bridge 在 [`skills/`](../skills/) 提供 **21 个 Agent Skills**，均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
+**QMT Trading Skill** 在 [`skills/`](../skills/) 提供 **21 个 Agent Skills**（底层调用 **QMT Bridge** API），均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
 
 **路线图**：[skills/ROADMAP.md](../skills/ROADMAP.md) · **总览**：[skills/README.md](../skills/README.md) · **开发命令**：[开发指南](development.md)
 

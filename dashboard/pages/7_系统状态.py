@@ -9,7 +9,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _sidebar import require_client
 
-st.set_page_config(page_title="系统状态 - QMT Bridge", layout="wide")
+st.set_page_config(page_title="系统状态 - QMT Trading Skill", layout="wide")
 st.title("系统状态")
 
 client = require_client()
@@ -34,7 +34,7 @@ col1, col2 = st.columns(2)
 with col1:
     try:
         version = client.get_server_version()
-        st.metric("QMT Bridge 服务端版本", version)
+        st.metric("Bridge 服务端版本", version)
     except Exception as e:
         st.error(f"获取服务端版本失败: {e}")
 

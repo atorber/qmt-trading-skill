@@ -5,7 +5,7 @@ description: >-
   在用户提到基本面、财报筛选、ROE、EPS、排雷时使用；仅下载缓存请用 financial-download。
 ---
 
-# QMT Bridge 基本面筛选 Skill
+# QMT Trading Skill · 基本面筛选
 
 > **实现状态**：✅ `screen_financial.py`（筛选；下载见 [financial-download](../qmt-bridge-financial-download/SKILL.md)）
 
