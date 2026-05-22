@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "qmt-bridge"
 dynamic = ["version"]
-description = "QMT Trading Skill — QMT Bridge (HTTP/WebSocket API) + Agent Skills for miniQMT (xtquant)"
+description = "QMT Trading Skill：QMT Bridge（HTTP/WebSocket API）+ Agent Skills，对接 miniQMT，局域网行情、交易与自然语言工作流"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
