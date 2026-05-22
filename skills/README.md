@@ -2,7 +2,10 @@
 
 本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **21 个**，均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
 
-在线文档：[Agent Skills](../docs/agent-skills.md)
+在线文档：
+
+- **[QMT Trading Skill 文档（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)** — 快速开始、配置、Agent Skills、API 速查等
+- [Agent Skills（仓库内）](../docs/agent-skills.md) · [每日复盘示例](../docs/examples/daily-eval-report.md)
 
 ## 怎么用（推荐）
 
