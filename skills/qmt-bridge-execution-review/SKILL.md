@@ -92,6 +92,10 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 
 - 只读；需 `X-API-Key` 的交易查询端点
 
+## 报告示例（文档）
+
+脱敏后的完整章节结构见 **[docs/examples/daily-eval-report.md](../../docs/examples/daily-eval-report.md)**（MkDocs「示例 → 每日复盘报告」）。
+
 ## 发布到飞书云文档
 
 同步飞书：**必须先** `--feishu-md` 生成 `reports/feishu_daily_eval.md`，再用 **[qmt-bridge-feishu-doc](../qmt-bridge-feishu-doc/SKILL.md)** + **lark-doc** / **lark-drive** 上传（禁止 Agent 手写正文）。工作流见 `qmt-bridge-feishu-doc/references/workflows/daily-eval-sync.md`。

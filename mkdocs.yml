@@ -38,6 +38,8 @@ nav:
   - 配置参考: configuration.md
   - 开发指南: development.md
   - Agent Skills: agent-skills.md
+  - 示例:
+      - 每日复盘报告: examples/daily-eval-report.md
   - REST API 速查: rest-api.md
   - WebSocket: websocket.md
   - Python 客户端 API:

@@ -48,6 +48,9 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 |-------|------|------------|
 | [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
 | [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
+
+!!! example "每日复盘报告长什么样？"
+    完整章节结构（委托表、成交、按标的汇总、操作评价、近 3 日量能热度）见 **[每日复盘报告示例](examples/daily-eval-report.md)**。示例中金额与盈亏已脱敏；实际报告由 `--feishu-md` 生成，可同步飞书。
 | [qmt-bridge-feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | 飞书云文档 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书` |
 | [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
