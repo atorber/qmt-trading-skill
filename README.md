@@ -1,695 +1,284 @@
 # QMT Trading Skill
 
-> **QMT Trading Skill** = **QMT Bridge**（HTTP/WebSocket API）+ **Agent Skills**（自然语言工作流）。在 Windows 对接 miniQMT，在 Mac/Linux 用对话完成行情、交易、复盘与飞书报告同步。
+> 在 Cursor / Claude Code / CodeX / OpenClaw 中用**自然语言**完成 A 股行情查询、交易、当日盈亏、交易复盘与飞书报告同步——底层通过 **QMT Bridge** 对接 Windows 上的 miniQMT。
 
-**QMT Trading Skill** bundles a lightweight **QMT Bridge** API server (wraps [xtquant](https://dict.thinktrader.net/nativeApi/start_now.html) / miniQMT) with **21 Agent Skills** for Cursor / Claude Code. Bridge runs on Windows beside the QMT client; any device on your LAN — Mac, Linux, or mobile — calls the API, while Skills turn natural language into scripted workflows (trading, daily P&amp;L, execution review, Feishu sync, and more).
+本仓库的核心是 **21 个 Agent Skills**（`skills/`）：每个 Skill 含 `SKILL.md` 规程与可执行 Python 脚本，由 Agent 读取后调用 Bridge API。**QMT Bridge** 是支撑层（HTTP/WebSocket 服务 + 可选 `QMTClient`），不是使用入口。
+
+---
+
+## 架构关系
+
+三层自下而上依赖，职责分离：
 
 ```
-Mac / Linux (主力机)                    Windows (中转站)
-┌──────────────────────┐                ┌─────────────────────────┐
-│  你的分析 / 交易代码    │   HTTP/WS     │  miniQMT 客户端 (登录中)  │
-│  本地数据库            │ ◄───────────► │  QMT Bridge (FastAPI)    │
-│  可视化仪表盘          │   局域网       │  xtquant                 │
-└──────────────────────┘                └─────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│  QMT Trading Skill（本仓库 · 你主要与之交互）                      │
+│  · 21 个 Agent Skills：自然语言 → scripts/*.py → Bridge API      │
+│  · 工作流：盈亏 / 复盘 / 风控 / 研究 / 飞书同步 …                  │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ HTTP / WebSocket（局域网）
+┌───────────────────────────────▼─────────────────────────────────┐
+│  QMT Bridge（API 服务层 · `qmt-server`）                          │
+│  · FastAPI：100+ REST、5 个 WebSocket                             │
+│  · 封装 xtquant，把行情与交易暴露为标准端点                         │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ 进程内调用
+┌───────────────────────────────▼─────────────────────────────────┐
+│  QMT / miniQMT（券商客户端 · 仅 Windows）                         │
+│  · 需登录并保持运行；xtquant 依赖此进程获取行情与报单               │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Why
+| 层级 | 运行位置 | 你需要做什么 |
+|------|----------|--------------|
+| **QMT** | Windows | 安装券商 QMT，勾选「独立交易」登录，保持窗口运行 |
+| **QMT Bridge** | Windows（与 QMT 同机） | 安装本仓库、`qmt-server` 启动 API（交易需 `--trading`） |
+| **QMT Trading Skill** | Mac / Linux / Windows（主力机） | Cursor 对话或 `@` Skill；Agent 执行 `skills/*/scripts/*.py` |
 
-miniQMT / xtquant 只能在 Windows 上运行，且必须依赖 QMT 客户端保持登录。如果你的主力开发机是 Mac 或 Linux，就无法直接调用 xtquant。
+典型拓扑：Windows 作**中转站**（QMT + Bridge），Mac/Linux 作**主力机**（对话 + 分析 + 数据库）；Skill 脚本通过局域网 IP 访问 Bridge。
 
-QMT Trading Skill 解决这个问题：**Bridge 层**在 Windows 运行 QMT 客户端 + `qmt-server`；**Skill 层**在你的 Mac/Linux 上通过自然语言调用 Bridge（持仓、盈亏、复盘、风控等）。核心分析逻辑与数据库仍在你自己的主力机上运行。
+```
+Mac / Linux（主力机）                 Windows（中转站）
+┌──────────────────────┐             ┌─────────────────────────┐
+│ Cursor / Claude      │   HTTP/WS   │  QMT 客户端（登录中）      │
+│ @skills/…/SKILL.md   │ ◄─────────► │  qmt-server (Bridge)     │
+│ 分析 / 本地库         │   局域网     │  xtquant                 │
+└──────────────────────┘             └─────────────────────────┘
+         ▲
+         └── QMT Trading Skill：自然语言触发脚本
+```
 
-## Features
+---
 
-- **100+ REST API 端点** — 历史 K 线、实时行情、L2 逐笔、板块管理、财务数据、指数权重、期权链、可转债、ETF、港股通、期货主力合约等
-- **5 个 WebSocket 端点** — 实时行情推送、全市场行情、L2 千档、下载进度、交易回报
-- **程序化交易** (可选) — 下单、撤单、批量委托、融资融券、银证转账、智能交易
-- **零依赖客户端** — Python 客户端基于 stdlib，无需安装 xtquant 即可在任意平台使用
-- **API Key 认证** — 可选的 API Key 保护，交易端点强制认证
-- **自动预下载** — 服务启动时自动下载板块、日历、指数权重等基础数据，之后每日定时刷新，客户端无需手动触发
-- **Agent Skills（QMT Trading Skill）** — 仓库内置 **21 个** `skills/`（交易、复盘、组合风险、**当日盈亏**、行情研究等），自然语言或 `@` Skill 触发，由 Agent 执行脚本
+## Skill 能做什么
 
-## Prerequisites
+Skills 把重复性的 Bridge 调用封装成**可对话、可审计**的工作流。写操作（下单、撤单、调仓、下载财报）须你确认后脚本才加 `--execute --confirm`。
 
-### Windows 端 (服务端)
+### 按场景分类
 
-- **Python** 3.10+
-- **QMT 客户端** — 已安装并获得券商账号密码（需联系客户经理开通 miniQMT 权限）
-- **xtquant** — 通常随 QMT 客户端安装，或 `pip install xtquant`
+| 场景 | Skill | 典型说法 |
+|------|-------|----------|
+| **交易** | [trading](skills/qmt-bridge-trading/SKILL.md) | `帮我查持仓和可用资金` · `下一笔买入（先预览）` · `清仓某只股票` |
+| | [order-ops](skills/qmt-bridge-order-ops/SKILL.md) | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
+| | [smart-execution](skills/qmt-bridge-smart-execution/SKILL.md) | `预览这笔买单会不会涨跌停` |
+| | [rebalance](skills/qmt-bridge-rebalance/SKILL.md) | `按目标权重生成调仓计划` |
+| **复盘与报告** | [**daily-pnl**](skills/qmt-bridge-daily-pnl/SKILL.md) | `今天账户盈亏多少` · `分标的列当日盈亏` |
+| | [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
+| | [feishu-doc](skills/qmt-bridge-feishu-doc/SKILL.md) | `把今日复盘同步到飞书` · `上传涨跌分析到飞书` |
+| **风控** | [portfolio-risk](skills/qmt-bridge-portfolio-risk/SKILL.md) | `组合风险快照` · `持仓集中度是否过高` |
+| **研究** | [**return-analysis**](skills/qmt-bridge-return-analysis/SKILL.md) | `评估持仓涨幅概率` · `1/5/10/30 日阶段强弱` |
+| | [market-watch](skills/qmt-bridge-market-watch/SKILL.md) | `自选行情快照` · `盘前看下指数和自选涨跌` |
+| | [sector-theme](skills/qmt-bridge-sector-theme/SKILL.md) | `今天行业强弱怎么排` |
+| | [financial-download](skills/qmt-bridge-financial-download/SKILL.md) | `下载财报到 Bridge 缓存` |
+| | [fundamental-screen](skills/qmt-bridge-fundamental-screen/SKILL.md) | `按 ROE、EPS 做基本面筛选` |
+| | [technical-signal](skills/qmt-bridge-technical-signal/SKILL.md) | `用 QMT 公式检查是否金叉` |
+| **品种扩展** | [etf](skills/qmt-bridge-etf/SKILL.md)、[convertible](skills/qmt-bridge-convertible/SKILL.md)、[option](skills/qmt-bridge-option/SKILL.md)、[hk-connect](skills/qmt-bridge-hk-connect/SKILL.md) | ETF / 可转债 / 期权链 / 港股通 |
+| **其他** | [realtime-monitor](skills/qmt-bridge-realtime-monitor/SKILL.md)、[event-calendar](skills/qmt-bridge-event-calendar/SKILL.md)、[credit-margin](skills/qmt-bridge-credit-margin/SKILL.md) | WebSocket 示例、交易日历、两融快照 |
 
-### 网络
+完整列表、提示词与路线图：[`skills/README.md`](skills/README.md) · [`skills/ROADMAP.md`](skills/ROADMAP.md) · 在线 [Agent Skills 文档](docs/agent-skills.md)。
 
-- Windows 和你的主力机在同一局域网下（连同一个路由器 / WiFi）
-- Windows 防火墙放行本项目使用的端口（默认 8000）
+### 推荐日内工作流
 
-## Quick Start
+```
+calendar → watchlist / sector-rank
+    → download-financial → fundamental-screen
+    → return-analysis → portfolio-risk → daily-pnl
+    → execution-review → feishu-doc
+```
 
-### 1. 安装
+复盘报告示例（脱敏）：[`docs/examples/daily-eval-report.md`](docs/examples/daily-eval-report.md)。
+
+### 亮点能力说明
+
+- **当日盈亏**（`daily-pnl`）：优先采用柜台 `today_profit_loss`；否则按现市值、昨收、当日买卖估算，含已清仓标的；支持 `--json`。
+- **交易复盘**（`execution-review`）：汇总成交与持仓变动，结合量能/热度与交易哲学做操作评价；`--feishu-md` 生成飞书 Markdown。
+- **涨跌概率**（`return-analysis`）：多周期累计涨幅与量价形态统计，可对接持仓列表输出明日观察点。
+- **飞书同步**（`feishu-doc`）：按 [`doc-registry`](skills/qmt-bridge-feishu-doc/references/doc-registry.md) 命名规则上传云文档，工作流见 [daily-eval-sync](skills/qmt-bridge-feishu-doc/references/workflows/daily-eval-sync.md)。
+
+---
+
+## 部署与使用
+
+分两步：**先让 Bridge 在 Windows 上可用**，**再在主力机用 Skills**。
+
+### 环境要求
+
+| 端 | 要求 |
+|----|------|
+| **Windows（Bridge）** | Python 3.10+、QMT 客户端（已开通 miniQMT）、xtquant（通常随 QMT 安装） |
+| **主力机（Skills）** | 安装本仓库 `pip install -e .`；[Cursor](https://cursor.com) 或 Claude Code；与 Windows **同一局域网** |
+| **网络** | 防火墙放行 Bridge 端口（默认 `8000`，常用 `8080`） |
+
+### 第一步：安装与配置（Windows）
 
 ```bash
-git clone https://github.com/qmt-bridge/qmt-bridge.git
+git clone https://github.com/atorber/qmt-bridge.git
 cd qmt-bridge
-
-# 安装服务端（含 WebSocket 支持）
 pip install -e ".[full]"
 
-# 或者只安装服务端（不含 WebSocket）
-pip install -e ".[server]"
-```
-
-如果只需要在远程机器上使用客户端：
-
-```bash
-# 零依赖安装（仅 HTTP）
-pip install -e .
-
-# 含 WebSocket 订阅支持
-pip install -e ".[client]"
-```
-
-### 2. 配置
-
-```bash
 cp .env.example .env
-# 按需编辑 .env
+# 编辑 .env：端口、API Key、交易路径等
 ```
 
-### 3. 启动 QMT 客户端
+### 第二步：启动 QMT 与 Bridge（Windows）
 
-打开 QMT，勾选 **"独立交易"** 模式登录，保持窗口运行（可最小化）。
-
-### 4. 启动 API 服务
+1. 打开 **QMT**，勾选 **「独立交易」** 登录，保持运行（可最小化）。
+2. 启动 API 服务：
 
 ```bash
-# 使用 CLI 命令（推荐）
-qmt-server
+# 仅行情数据
+qmt-server --port 8080
 
-# 自定义参数
-qmt-server --port 8080 --log-level debug
-
-# 启用交易模块
-qmt-server --port 8080 --log-level debug --trading --api-key your-api-key --mini-qmt-path "C:\中山证券QMT实盘交易端\userdata_mini" --account-id your-account
+# 启用交易（Skill 下单/查持仓需要）
+qmt-server --port 8080 --trading --api-key your-secret-key \
+  --mini-qmt-path "C:\你的QMT路径\userdata_mini" \
+  --account-id 你的资金账号
 ```
 
-也可以使用脚本：
+也可使用 `scripts/start.bat` / `scripts/start.sh`（见 [`scripts/`](scripts/)）。
+
+3. **验证**：浏览器打开 `http://127.0.0.1:8080/docs`，或：
 
 ```bash
-# 前台运行（Ctrl+C 停止）
-bash scripts/start.sh
-
-# 后台运行
-bash scripts/start-nohup.sh
-bash scripts/stop.sh
-
-# Windows
-scripts\start.bat
-scripts\stop.bat
+curl http://127.0.0.1:8080/api/meta/health
 ```
 
-### 5. 验证
+常用环境变量见下表；完整说明见 [配置参考](docs/configuration.md)。
 
-在你的 Mac/Linux 浏览器中访问：
+| 环境变量 | 默认值 | 说明 |
+|---------|--------|------|
+| `QMT_BRIDGE_HOST` | `0.0.0.0` | 监听地址（允许局域网访问） |
+| `QMT_BRIDGE_PORT` | `8000` | 端口（示例多用 `8080`） |
+| `QMT_BRIDGE_API_KEY` | _(空)_ | 设置后交易端点须带 `X-API-Key` |
+| `QMT_BRIDGE_TRADING_ENABLED` | `false` | 等同 `--trading` |
 
-```
-http://<Windows局域网IP>:8000/docs
-```
+### 第三步：在 Cursor 使用 Trading Skill（主力机）
 
-看到 Swagger 文档页面即表示服务正常。也可以用 curl 检查：
+1. **克隆同一仓库**（或仅复制 `skills/` 与 `.env`），`pip install -e .`。
+2. 在 `.env` 中配置与 Windows Bridge 一致的 `QMT_BRIDGE_API_KEY`、`QMT_BRIDGE_PORT`；脚本连接地址用 **`127.0.0.1`**（本机调 Bridge）或 **Windows 局域网 IP**（远程调 Bridge），不要用 `0.0.0.0`。
+3. **自然语言**：在对话中直接说，例如：
+   - `今天账户盈亏多少`
+   - `生成今日交易复盘`
+   - `把复盘同步到飞书`
+4. **@ Skill 文件**：`@skills/qmt-bridge-execution-review/SKILL.md`，让 Agent 按规程执行脚本。
+
+**在 Cursor 中启用 Skills 目录（可选）：**
 
 ```bash
-curl http://<Windows局域网IP>:8000/api/meta/health
+mkdir -p .cursor/skills
+for d in skills/qmt-bridge-*/; do
+  name=$(basename "$d")
+  ln -sf "../../skills/$name" ".cursor/skills/$name"
+done
 ```
 
-## Configuration
-
-通过 `.env` 文件或环境变量配置，CLI 参数优先级最高。
-
-| 环境变量 | CLI 参数 | 默认值 | 说明 |
-|---------|---------|-------|------|
-| `QMT_BRIDGE_HOST` | `--host` | `0.0.0.0` | 监听地址（`0.0.0.0` = 允许局域网访问） |
-| `QMT_BRIDGE_PORT` | `--port` | `8000` | 监听端口 |
-| `QMT_BRIDGE_LOG_LEVEL` | `--log-level` | `info` | 日志级别：critical / error / warning / info / debug |
-| `QMT_BRIDGE_WORKERS` | `--workers` | `1` | Worker 数量（Windows 下建议保持 1） |
-| `QMT_BRIDGE_API_KEY` | `--api-key` | _(空)_ | API Key，用于保护交易端点 |
-| `QMT_BRIDGE_REQUIRE_AUTH_FOR_DATA` | — | `false` | 数据端点是否也要求认证 |
-| `QMT_BRIDGE_TRADING_ENABLED` | `--trading` | `false` | 是否启用交易模块 |
-| `QMT_BRIDGE_MINI_QMT_PATH` | `--mini-qmt-path` | _(空)_ | miniQMT 安装路径（交易模块需要） |
-| `QMT_BRIDGE_TRADING_ACCOUNT_ID` | `--account-id` | _(空)_ | 交易账户 ID |
-| `QMT_BRIDGE_XTDATA_LOCK_WAIT_TIMEOUT_SEC` | — | `15` | 全局 xtdata 串行锁最大等待秒数，超时返回 `503` |
-| `QMT_BRIDGE_DIVID_FACTORS_TIMEOUT_SEC` | — | `8` | `/api/market/divid_factors` 默认执行超时秒数，超时返回 `504` |
-| `QMT_BRIDGE_DIVID_FACTORS_SLOW_LOG_SEC` | — | `1` | `/api/market/divid_factors` 慢调用日志阈值（秒） |
-
-## Auto Pre-download（自动预下载）
-
-服务端启动时会自动在后台执行一轮基础数据预下载，之后每 24 小时自动刷新。客户端无需手动调用 `/api/download/*` 即可直接查询板块、日历、指数权重等数据。
-
-| 下载项 | 说明 |
-|-------|------|
-| `download_sector_data` | 板块分类与成分股 |
-| `download_holiday_data` | 节假日日历 |
-| `download_history_contracts` | 期货/期权过期合约映射 |
-| `download_index_weight` | 指数成分权重 |
-| `download_etf_info` | ETF 申赎清单 |
-| `download_cb_data` | 可转债数据 |
-
-以下接口 **不纳入** 自动调度，仍需客户端按需调用：
-
-- `download_history_data2` — 需要具体股票代码与时间范围
-- `download_financial_data2` — 需要股票代码，且耗时较长
-- `download_metatable_data` — 合约元数据表，按需获取即可
-
-调度基于 `asyncio` 后台协程实现，无第三方依赖。预下载日志可在服务端输出中查看（关键字：`预下载完成` / `预下载失败`）。
-
-## API Reference
-
-完整 API 文档请访问运行中的服务 `/docs`（Swagger UI）或 `/redoc`（ReDoc）。以下为端点概览。
-
-### Legacy Endpoints（向后兼容）
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/history` | 单只股票历史 K 线 |
-| GET | `/api/batch_history` | 批量获取多只股票历史数据 |
-| GET | `/api/full_tick` | 最新 tick 快照 |
-| GET | `/api/sector_stocks` | 板块成分股列表 |
-| GET | `/api/instrument_detail` | 股票基本信息 |
-| POST | `/api/download` | 触发历史数据下载 |
-
-### Market — 行情数据 `/api/market/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/market/full_tick` | 实时行情快照（个股 / 指数） |
-| GET | `/api/market/indices` | 主要指数行情概览 |
-| GET | `/api/market/market_data_ex` | 增强版 K 线（除权、填充） |
-| GET | `/api/market/local_data` | 仅读本地缓存（离线可用） |
-| GET | `/api/market/divid_factors` | 除权因子 |
-| GET | `/api/market/market_data` | 通用行情数据查询 |
-
-`/api/market/divid_factors` 额外支持可选参数 `timeout_sec`（单位秒，范围 `0.5~120`），用于覆盖服务端默认超时。该接口在底层卡住时会超时降级并返回 `504`，避免长时间占用全局串行能力。
-
-### Tick & L2 — 逐笔数据 `/api/tick/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/tick/l2_quote` | L2 行情快照 |
-| GET | `/api/tick/l2_order` | L2 逐笔委托 |
-| GET | `/api/tick/l2_transaction` | L2 逐笔成交 |
-| GET | `/api/tick/l2_thousand_quote` | L2 千档行情 |
-
-### Sector — 板块数据 `/api/sector/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/sector/list` | 所有板块列表 |
-| GET | `/api/sector/stocks` | 板块成分股（支持历史日期） |
-| GET | `/api/sector/info` | 板块元数据 |
-| POST | `/api/sector/create_folder` | 创建板块文件夹 |
-| POST | `/api/sector/create` | 创建自定义板块 |
-| POST | `/api/sector/add_stocks` | 添加成分股 |
-| POST | `/api/sector/remove_stocks` | 移除成分股 |
-| DELETE | `/api/sector/remove` | 删除板块 |
-
-### Calendar — 交易日历 `/api/calendar/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/calendar/trading_dates` | 交易日列表 |
-| GET | `/api/calendar/holidays` | 节假日列表 |
-| GET | `/api/calendar/trading_calendar` | 完整日历 |
-| GET | `/api/calendar/trading_period` | 交易时段 |
-| GET | `/api/calendar/is_trading_date` | 日期校验 |
-| GET | `/api/calendar/prev_trading_date` | 上一个交易日 |
-| GET | `/api/calendar/next_trading_date` | 下一个交易日 |
-
-### Financial — 财务数据 `/api/financial/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/financial/data` | 财务报表数据（资产负债表 / 利润表等） |
-
-### Instrument — 合约信息 `/api/instrument/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/instrument/detail_list` | 批量合约详情 |
-| GET | `/api/instrument/type` | 代码类型判断 |
-| GET | `/api/instrument/ipo_info` | IPO 信息 |
-| GET | `/api/instrument/index_weight` | 指数成分股权重 |
-| GET | `/api/instrument/his_st_data` | ST 历史 |
-
-### Option — 期权数据 `/api/option/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/option/detail` | 期权合约详情 |
-| GET | `/api/option/chain` | 标的期权链 |
-| GET | `/api/option/list` | 按到期日 / 类型筛选 |
-| GET | `/api/option/his_option_list` | 历史期权列表 |
-
-### ETF & Convertible Bond — `/api/etf/*` & `/api/cb/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/etf/list` | ETF 代码列表 |
-| GET | `/api/etf/info` | ETF 申赎清单 |
-| GET | `/api/cb/list` | 可转债列表 |
-| GET | `/api/cb/info` | 可转债信息 |
-
-### Futures — 期货数据 `/api/futures/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/futures/main_contract` | 主力合约 |
-| GET | `/api/futures/sec_main_contract` | 次主力合约 |
-
-### HK — 港股通 `/api/hk/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/hk/stock_list` | 港股通标的列表 |
-| GET | `/api/hk/connect_stocks` | 按方向筛选（沪港通 / 深港通） |
-
-### Meta — 系统元数据 `/api/meta/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/meta/health` | 健康检查 |
-| GET | `/api/meta/version` | 服务版本 |
-| GET | `/api/meta/xtdata_version` | xtquant 版本 |
-| GET | `/api/meta/connection_status` | xtdata 连接状态 |
-| GET | `/api/meta/markets` | 可用市场列表 |
-| GET | `/api/meta/period_list` | K 线周期列表 |
-| GET | `/api/meta/stock_list` | 按类别获取证券列表 |
-| GET | `/api/meta/last_trade_date` | 最近交易日 |
-
-### Download — 数据下载 `/api/download/*`
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/download/history_data2` | 批量下载历史数据 |
-| POST | `/api/download/financial_data` | 下载财务数据 |
-| POST | `/api/download/sector_data` | 下载板块数据 |
-| POST | `/api/download/index_weight` | 下载指数权重 |
-| POST | `/api/download/etf_info` | 下载 ETF 信息 |
-| POST | `/api/download/cb_data` | 下载可转债数据 |
-| POST | `/api/download/history_contracts` | 下载过期合约 |
-
-### Trading — 交易 `/api/trading/*` (需要 API Key)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/trading/order` | 下单 |
-| POST | `/api/trading/cancel` | 撤单 |
-| POST | `/api/trading/batch_order` | 批量下单 |
-| GET | `/api/trading/orders` | 查询委托 |
-| GET | `/api/trading/trades` | 查询成交 |
-| GET | `/api/trading/positions` | 查询持仓 |
-| GET | `/api/trading/asset` | 查询资产 |
-| GET | `/api/trading/order_detail` | 查询单笔委托 |
-
-### Credit — 融资融券 `/api/credit/*` (需要 API Key)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/credit/order` | 信用交易下单 |
-| GET | `/api/credit/quota` | 额度查询 |
-| GET | `/api/credit/position` | 信用持仓 |
-
-### Fund & Bank — 资金划转 (需要 API Key)
-
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/fund/transfer` | 资金划转 |
-| GET | `/api/fund/history` | 划转记录 |
-| POST | `/api/bank/transfer` | 银证转账 |
-
-### WebSocket
-
-| Path | Description |
-|------|-------------|
-| `/ws/realtime` | 实时行情推送 |
-| `/ws/whole_quote` | 全市场行情订阅 |
-| `/ws/l2_thousand` | L2 千档行情推送 |
-| `/ws/download_progress` | 下载进度推送 |
-| `/ws/trade` | 交易回报推送 (需要 API Key) |
-
-WebSocket 连接后发送 JSON 订阅请求：
-
-```jsonc
-// /ws/realtime
-{ "stocks": ["000001.SZ", "600519.SH"], "period": "tick" }
-
-// /ws/whole_quote
-{ "codes": ["SH", "SZ"] }
-
-// /ws/l2_thousand
-{ "stocks": ["000001.SZ"] }
-
-// /ws/download_progress
-{ "stocks": ["000001.SZ"], "period": "1d", "start_time": "", "end_time": "" }
-```
-
-## Realtime K-line（实时 K 线）
-
-构建盘中实时 K 线的标准模式：**REST 拉历史 + WebSocket 推增量**。
-
-```
-            初始化                                持续更新
-┌──────────────────────────┐     ┌──────────────────────────────────┐
-│ GET /api/market/          │     │ WS  /ws/realtime                 │
-│     market_data_ex        │     │     {"stocks":["000001.SZ"],     │
-│   period=1m, count=240    │     │      "period":"1m"}              │
-│                           │     │                                  │
-│   ← 返回 240 根已完结 K 线  │     │   ← 持续推送最新 1m K 线柱        │
-└────────────┬─────────────┘     └──────────────┬───────────────────┘
-             │                                  │
-             ▼                                  ▼
-      ┌─────────────────────────────────────────────────┐
-      │  客户端本地 K 线数组                               │
-      │  - 初始化：填充历史数据                             │
-      │  - 推送到来时：                                    │
-      │    · 时间戳 == 最后一根 → 更新（盘中未完结柱）        │
-      │    · 时间戳 > 最后一根  → 追加（新柱）               │
-      └─────────────────────────────────────────────────┘
-```
-
-**步骤：**
-
-1. **拉取历史** — 调用 REST 接口获取已完结的历史 K 线填充图表
-2. **订阅实时** — 连接 WebSocket，订阅相同周期（如 `1m`）
-3. **客户端合并** — WebSocket 推送的是 xtdata 聚合好的 K 线柱（非原始 tick），按时间戳判断是更新最后一根还是追加新柱
-
-> **注意：** `subscribe_quote(period="1m")` 推送的已经是聚合好的分钟 K 线，无需客户端自行从 tick 合成。支持的周期：`tick`、`1m`、`5m`、`15m`、`30m`、`60m`、`1d`。
-
-**Python 客户端示例：**
-
-```python
-import asyncio
-from qmt_bridge import QMTClient
-
-client = QMTClient(host="192.168.1.100")
-
-# 1. 拉取历史 K 线
-history = client.get_history_ex(["000001.SZ"], period="1m", count=240)
-
-# 2. WebSocket 订阅实时更新
-def on_kline(data):
-    # data 是 xtdata 聚合好的 K 线柱
-    # 按时间戳与本地数组最后一根比较：相同则更新，更大则追加
-    print(data)
-
-asyncio.run(client.subscribe_realtime(
-    stocks=["000001.SZ"],
-    period="1m",       # 订阅 1 分钟 K 线（非 tick）
-    callback=on_kline,
-))
-```
-
-## Python Client
-
-项目附带零依赖 Python 客户端，可在任意平台使用（无需安装 xtquant）。
-
-### 基本用法
-
-```python
-from qmt_bridge import QMTClient
-
-client = QMTClient(host="192.168.1.100", port=8000)
-
-# 历史 K 线
-df = client.get_history("000001.SZ", period="1d", count=60)
-
-# 增强版 K 线，前复权
-dfs = client.get_history_ex(["000001.SZ", "600519.SH"], dividend_type="front", count=60)
-
-# 大盘行情一览
-indices = client.get_major_indices()
-
-# 实时快照
-snapshot = client.get_market_snapshot(["000001.SZ", "600519.SH"])
-
-# 板块
-sectors = client.get_sector_list()
-stocks = client.get_sector_stocks("沪深A股")
-
-# 财务数据
-fin = client.get_financial_data(["000001.SZ"], tables=["Balance"])
-
-# ETF / 期权 / 期货
-etfs = client.get_etf_list()
-options = client.get_option_list("000300.SH", "20250321")
-main_contract = client.get_main_contract("IF.CFE")
-
-# 元数据
-markets = client.get_markets()
-periods = client.get_periods()
-last_date = client.get_last_trade_date("SH")
-```
-
-### 交易 (需要 API Key)
-
-```python
-client = QMTClient(host="192.168.1.100", api_key="your-secret-key")
-
-# 下单
-order_id = client.place_order(
-    stock_code="000001.SZ",
-    order_type=23,        # 买入
-    order_volume=100,
-    price_type=5,         # 最新价
-)
-
-# 查询
-orders = client.query_orders()
-positions = client.query_positions()
-asset = client.query_asset()
-
-# 撤单
-client.cancel_order(order_id)
-```
-
-### WebSocket 实时订阅
-
-```python
-import asyncio
-
-def on_tick(data):
-    print(data)
-
-# 实时行情
-asyncio.run(client.subscribe_realtime(
-    stocks=["000001.SZ", "600519.SH"],
-    callback=on_tick,
-))
-
-# 全市场行情
-asyncio.run(client.subscribe_whole_quote(
-    codes=["SH", "SZ"],
-    callback=on_tick,
-))
-```
-
-## Examples
+**本机手动跑脚本（调试 / 无 Agent 时）：**
 
 ```bash
-# 健康检查
-curl http://192.168.1.100:8000/api/meta/health
+# 仓库根目录，.env 已配置 QMT_BRIDGE_API_KEY
+python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py \
+  --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 
-# 平安银行最近 60 根日线
-curl "http://192.168.1.100:8000/api/history?stock=000001.SZ&period=1d&count=60"
-
-# 增强版 K 线，前复权
-curl "http://192.168.1.100:8000/api/market/market_data_ex?stocks=000001.SZ&period=1d&count=5&dividend_type=front"
-
-# 大盘行情
-curl http://192.168.1.100:8000/api/market/indices
-
-# 个股 / 指数快照
-curl "http://192.168.1.100:8000/api/market/full_tick?stocks=000001.SH,000001.SZ"
-
-# 板块列表
-curl http://192.168.1.100:8000/api/sector/list
-
-# 沪深 A 股成分股
-curl "http://192.168.1.100:8000/api/sector/stocks?sector=沪深A股"
-
-# ETF 代码列表
-curl http://192.168.1.100:8000/api/etf/list
-
-# 交易日列表
-curl "http://192.168.1.100:8000/api/calendar/trading_dates?market=SH"
-
-# 指数成分股权重
-curl "http://192.168.1.100:8000/api/instrument/index_weight?index_code=000300.SH"
-
-# 财务数据
-curl "http://192.168.1.100:8000/api/financial/data?stocks=000001.SZ&tables=Balance"
-
-# 批量下载历史数据
-curl -X POST http://192.168.1.100:8000/api/download/history_data2 \
-  -H "Content-Type: application/json" \
-  -d '{"stocks": ["000001.SZ", "600519.SH"], "period": "1d"}'
-
-# 下单（需要 API Key）
-curl -X POST http://192.168.1.100:8000/api/trading/order \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: your-secret-key" \
-  -d '{"stock_code": "000001.SZ", "order_type": 23, "order_volume": 100}'
+python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
+  --host 127.0.0.1 --port 8080 --api-key YOUR_KEY --feishu-md
 ```
 
-## Documentation
+Windows 终端中文乱码：`chcp 65001` 或 `$env:PYTHONIOENCODING='utf-8'`。
 
-| 方式 | 说明 |
+### 可选：仪表盘与 Python 客户端
+
+- **Streamlit 仪表盘**：`pip install -e ".[dashboard]" && streamlit run dashboard/app.py`（连接 Bridge 做可视化，非 Skill 入口）。
+- **`QMTClient`**：零依赖 HTTP 客户端，适合自写策略代码直连 Bridge；示例见 [快速开始 · Python 客户端](docs/getting-started.md#python-客户端用法)。
+
+---
+
+## QMT Bridge（支撑层速览）
+
+Bridge 为 Skills 与自定义程序提供统一 API，启动后自动预下载板块、日历、指数权重等基础数据（每 24 小时刷新）。你通常**无需**逐条记忆 REST 路径——交给 Skill 或查阅在线文档即可。
+
+| 能力 | 说明 |
 |------|------|
-| **GitHub Pages** | push 到 `main` 后由 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 自动构建发布；地址为 `https://<仓库 owner>.github.io/qmt-trading-skill/`（上游示例：<https://atorber.github.io/qmt-trading-skill/>） |
-| **本地 MkDocs** | `pip install -e ".[docs]" && mkdocs serve -a 127.0.0.1:8001` |
-| **运行时 Swagger** | 服务启动后访问 `/docs` 或 `/redoc` |
+| 行情 | 历史/实时 K 线、L2、板块、财务、指数权重 |
+| 品种 | 期权链、可转债、ETF、港股通、期货主力 |
+| 交易 | 下单、撤单、批量委托、融资融券、银证转账（须 API Key） |
+| 实时 | 5 个 WebSocket：行情、全市场、L2 千档、下载进度、交易回报 |
 
-首次启用需在仓库 **Settings → Pages → Build and deployment** 中将 Source 设为 **GitHub Actions**。
+- **交互式 API 文档**：服务运行后访问 `/docs`（Swagger）或 `/redoc`
+- **完整端点列表**：[API 文档](docs/api/index.md) · [WebSocket](docs/websocket.md)
+- **实时 K 线模式**：REST 拉历史 + WebSocket 推增量，见 [文档](docs/websocket.md)
 
-## Agent Skills
+---
 
-**QMT Trading Skill** 在 [`skills/`](skills/) 发布 **21 个** Agent Skill（`SKILL.md` + 可执行 Python 脚本），供 Cursor / Claude Code 按自然语言调用 **QMT Bridge** REST API。路线图见 [`skills/ROADMAP.md`](skills/ROADMAP.md)；**提示词示例**见 [`skills/README.md`](skills/README.md)，在线文档见 [Agent Skills](docs/agent-skills.md)。
+## 文档
 
-### 分类概览
+| 文档 | 说明 |
+|------|------|
+| [快速开始](docs/getting-started.md) | Bridge 安装、配置、验证与客户端示例 |
+| [Agent Skills](docs/agent-skills.md) | 21 个 Skill 在线说明 |
+| [配置参考](docs/configuration.md) | 环境变量与 CLI 参数 |
+| [开发指南](docs/development.md) | 贡献、测试、Skill 开发约定 |
+| **GitHub Pages** | push `main` 后自动发布；示例：<https://atorber.github.io/qmt-trading-skill/> |
 
-| 类别 | Skill | 说明 |
-|------|-------|------|
-| 交易 | [trading](skills/qmt-bridge-trading/SKILL.md) | 持仓、下单、清仓 |
-| | [order-ops](skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 |
-| | [smart-execution](skills/qmt-bridge-smart-execution/SKILL.md) | 下单预览 |
-| | [rebalance](skills/qmt-bridge-rebalance/SKILL.md) | 再平衡 |
-| 风控与复盘 | [portfolio-risk](skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险快照 |
-| | [**daily-pnl**](skills/qmt-bridge-daily-pnl/SKILL.md) | **当日盈亏**（持仓 + 成交 + 已清仓） |
-| | [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | 当日交易复盘 |
-| | [feishu-doc](skills/qmt-bridge-feishu-doc/SKILL.md) | 报告上传飞书 |
-| 研究 | [**return-analysis**](skills/qmt-bridge-return-analysis/SKILL.md) | **多周期累计涨幅 + 涨跌概率**（日 K） |
-| | [market-watch](skills/qmt-bridge-market-watch/SKILL.md) | 自选/指数快照 |
-| | [sector-theme](skills/qmt-bridge-sector-theme/SKILL.md) | 板块涨跌排序 |
-| | [financial-download](skills/qmt-bridge-financial-download/SKILL.md) | 下载财报 |
-| | [fundamental-screen](skills/qmt-bridge-fundamental-screen/SKILL.md) | 财报筛选 |
-| | [technical-signal](skills/qmt-bridge-technical-signal/SKILL.md) | 公式检查 |
-| 其他 | [realtime-monitor](skills/qmt-bridge-realtime-monitor/SKILL.md)、[event-calendar](skills/qmt-bridge-event-calendar/SKILL.md)、[credit-margin](skills/qmt-bridge-credit-margin/SKILL.md)、[etf](skills/qmt-bridge-etf/SKILL.md)、[convertible](skills/qmt-bridge-convertible/SKILL.md)、[option](skills/qmt-bridge-option/SKILL.md)、[hk-connect](skills/qmt-bridge-hk-connect/SKILL.md) | 见各 `SKILL.md` |
+本地预览：`pip install -e ".[docs]" && mkdocs serve -a 127.0.0.1:8001`
 
-### 快速使用（自然语言）
+---
 
-在 Cursor 中直接说，例如：`帮我查持仓`、`今天账户盈亏多少`、`生成今日交易复盘`、`把复盘同步到飞书`。Agent 会读取对应 `skills/qmt-bridge-*/SKILL.md` 并执行脚本。
-
-本机手动跑脚本时，在仓库根目录配置 `.env`（至少 `QMT_BRIDGE_API_KEY`；客户端请用 `127.0.0.1`）：
-
-```bash
-pip install -e .
-python skills/qmt-bridge-trading/scripts/trading_status.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py --holdings --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
-```
-
-`daily-pnl` 优先采用 QMT 柜台 `today_profit_loss`；否则按 **现市值 − 昨收×昨仓 − 今日买入金额 + 今日卖出金额** 估算，并包含当日已清仓标的。`--json` 输出机器可读结果；`--no-detail` 为紧凑表。
-
-**Cursor**：可将常用 skill 链到 `.cursor/skills/`，或对话中 `@skills/qmt-bridge-daily-pnl/SKILL.md`。Windows 终端中文乱码可设 `PYTHONIOENCODING=utf-8` 或 `chcp 65001`。
-
-## Project Structure
+## 项目结构
 
 ```
 qmt-bridge/
-├── pyproject.toml                  # 项目元数据与依赖
-├── .env.example                    # 配置模板
-├── skills/                         # 21 个 Agent Skills + _shared 公共模块
-│   ├── README.md                   # 列表、工作流、运行方式
-│   ├── ROADMAP.md                  # 实现状态
-│   ├── _shared/                    # common、pnl_util、table_fmt 等
-│   └── qmt-bridge-*/               # 各 skill：SKILL.md + scripts/
-│       └── qmt-bridge-daily-pnl/   # 当日盈亏表格报告
-├── scripts/                        # 启动 / 停止脚本
-│   ├── start.sh / start.bat        # 前台启动
-│   ├── start-nohup.sh              # 后台启动
-│   └── stop.sh / stop.bat          # 停止服务
+├── skills/                    # ★ QMT Trading Skill 核心
+│   ├── README.md              # Skill 列表与提示词
+│   ├── ROADMAP.md             # 实现状态
+│   ├── _shared/               # 公共模块（pnl、飞书、表格等）
+│   └── qmt-bridge-*/          # 各 Skill：SKILL.md + scripts/
 ├── src/qmt_bridge/
-│   ├── _version.py                 # 版本号
-│   ├── server/                     # FastAPI 服务端
-│   │   ├── app.py                  # 应用工厂 & 生命周期管理
-│   │   ├── cli.py                  # qmt-server CLI 入口
-│   │   ├── config.py               # 配置加载
-│   │   ├── security.py             # API Key 认证
-│   │   ├── scheduler.py            # 后台数据预下载调度
-│   │   ├── helpers.py              # 数据转换工具
-│   │   ├── models.py               # Pydantic 请求 / 响应模型
-│   │   ├── deps.py                 # 依赖注入
-│   │   ├── routers/                # REST API 路由 (21 个模块)
-│   │   ├── ws/                     # WebSocket 端点 (5 个)
-│   │   └── trading/                # 交易模块
-│   │       ├── manager.py          # XtTraderManager 生命周期
-│   │       └── callbacks.py        # 交易回调
-│   └── client/                     # Python 客户端 (22 个 Mixin 模块)
-│       ├── __init__.py             # QMTClient 聚合类
-│       ├── base.py                 # HTTP 传输层 (stdlib)
-│       ├── websocket.py            # WebSocket 订阅
-│       └── [feature].py            # 各功能域客户端方法
-└── tests/                          # API 自动化测试（OpenAPI 契约）
-    ├── openapi_harness.py            # 遍历全部 REST 端点
-    ├── mocks/                        # xtquant / 交易桩
-    └── test_openapi_contract.py
+│   ├── server/                # QMT Bridge：FastAPI + qmt-server
+│   └── client/                # QMTClient（可选，直连 API）
+├── dashboard/                 # Streamlit 仪表盘（可选）
+├── docs/                      # MkDocs 文档
+├── scripts/                   # 启动/停止 Bridge
+└── tests/                     # API 契约测试 + Skill smoke
 ```
 
-## API 自动化测试
+---
 
-**契约测试**（默认，无需 QMT）：mock 遍历 OpenAPI 全部 REST 端点。
+## 测试
 
 ```bash
 pip install -e ".[server,test]"
-python -m pytest tests/ -q
+python -m pytest tests/ -q                    # 契约测试（无需 QMT）
+pytest tests/test_skills_smoke.py -q          # Skill 脚本 smoke
 ```
 
-**联调测试**（对已启动的真实 Bridge，如端口 `8080`）：
+联调真实 Bridge：`tests/README.md`（设置 `QMT_BRIDGE_LIVE=1` 等）。
 
-```bash
-# 先启动 qmt-server，再执行
-$env:QMT_BRIDGE_LIVE = "1"
-$env:QMT_BRIDGE_PORT = "8080"
-$env:QMT_BRIDGE_API_KEY = "your-key"   # 启用 --trading 时必填
-python -m pytest tests/live -m live -v
-```
+---
 
-详见 [`tests/README.md`](tests/README.md)。
+## 安全说明
 
-## Authentication
+设计用于**可信局域网**。请勿将 Bridge 直接暴露公网；远程访问请用 VPN。交易端点建议始终配置 `QMT_BRIDGE_API_KEY`。
 
-QMT Bridge（API 服务）支持可选的 API Key 认证机制：
-
-- **交易端点** (`/api/trading/*`, `/api/credit/*`, `/api/fund/*`, `/api/bank/*`) — 设置了 `API_KEY` 时强制认证
-- **数据端点** — 默认无需认证，可通过 `QMT_BRIDGE_REQUIRE_AUTH_FOR_DATA=true` 开启
-- **认证方式** — HTTP Header `X-API-Key: your-secret-key`
-
-## Security Notice
-
-本项目设计为**仅在可信局域网内使用**。请勿将服务直接暴露到公网。如确有需要，请通过 VPN 或防火墙规则保护访问。
+---
 
 ## FAQ
 
-**Q: QMT 客户端必须一直开着吗？**
+**Q: 必须一直开着 QMT 吗？**  
+是的。实时行情与报单依赖 QMT 进程；历史缓存可在客户端关闭后通过 `local_data` 等只读接口访问。
 
-是的。xtquant 通过 QMT 客户端获取行情数据，客户端关闭后 API 服务将无法返回实时数据。历史数据如果已下载到本地缓存，在脱机模式下仍可通过 `/api/market/local_data` 访问。
+**Q: Mac 上能直接跑 xtquant 吗？**  
+不能。miniQMT 仅 Windows；Mac/Linux 通过 Skills 对话 + 局域网访问 Windows 上的 Bridge。
 
-**Q: 支持自动下单吗？**
+**Q: 不用 Cursor，能用 Skills 吗？**  
+可以。每个 Skill 的 `SKILL.md` 中有 `python skills/.../scripts/....py` 命令，在仓库根目录配置 `.env` 后直接运行。
 
-v2.0 起支持。启用交易模块后 (`--trading`)，可通过 `/api/trading/*` 端点进行下单、撤单、批量委托等操作。交易端点强制要求 API Key 认证。
+**Q: Bridge 和 Skill 端口不一致怎么办？**  
+以 `.env` 的 `QMT_BRIDGE_PORT` 为准；脚本加 `--port 8080`（或与 `qmt-server` 一致）。
 
-**Q: 非交易时间能用吗？**
+**Q: API 细节在哪里？**  
+运行中的 `/docs`，或 [docs/api/](docs/api/index.md)。README 以 Skill 工作流为主，不重复罗列全部端点。
 
-可以。历史 K 线、板块成分股等静态数据在非交易时间也能正常获取。实时 tick 和 WebSocket 推送在非交易时间没有数据。
-
-**Q: 数据延迟大吗？**
-
-局域网内 HTTP 请求延迟通常在 1–5ms。实时 tick 通过 WebSocket 推送，延迟取决于 QMT 客户端本身的行情速度。
-
-**Q: 客户端需要安装什么依赖吗？**
-
-基础客户端 (HTTP) 零依赖，仅使用 Python 标准库。如需 WebSocket 订阅功能，安装 `pip install qmt-bridge[client]` 即可。如安装了 pandas，返回结果会自动转为 DataFrame。
-
-## 感谢
-
-本项目最初 fork 自 [atompilot/qmt-bridge](https://github.com/atompilot/qmt-bridge)，在此向原作者致以感谢与敬意。
+---
 
 ## License
 
