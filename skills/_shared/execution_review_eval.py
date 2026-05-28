@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from orders_util import slippage_bps
-from pnl_util import DailyPnlBreakdown, TradeDaySummary
+from pnl_util import DailyPnlBreakdown
 from trading_fmt import order_side, pick
 from trading_philosophy import (
     IntradayRange,
@@ -35,6 +35,8 @@ class StockOpEval:
     buy_avg: float | None = None
     range_position: float | None = None
     intraday: IntradayRange | None = None
+    no_trade_pnl: float | None = None
+    op_alpha_pnl: float | None = None
 
 
 @dataclass
@@ -45,6 +47,8 @@ class DailyOperationEval:
     order_count: int = 0
     cancelled_count: int = 0
     trade_count: int = 0
+    no_trade_total_pnl: float | None = None
+    op_alpha_total_pnl: float | None = None
     overall_score: float = 0.0
     overall_grade: str = ""
     summary_line: str = ""
@@ -296,6 +300,13 @@ def _pct_chg(b: DailyPnlBreakdown) -> float | None:
     return round((b.last_price / b.pre_close - 1) * 100, 2)
 
 
+def _no_trade_pnl(b: DailyPnlBreakdown) -> float | None:
+    """假设当日不进行任何买卖，仅持有昨仓到收盘的盈亏。"""
+    if b.last_price is None or b.pre_close is None:
+        return None
+    return round(b.yesterday_volume * (b.last_price - b.pre_close), 2)
+
+
 def _classify_operation(
     b: DailyPnlBreakdown,
     pct: float | None,
@@ -374,13 +385,23 @@ def build_operation_evaluation(
         result.cash = _to_float(pick(asset, "cash", "m_dCash"))
 
     total_pnl = 0.0
+    baseline_pnl = 0.0
     has_pnl = False
+    has_baseline = False
     for b in breakdowns:
         if b.daily_pnl is not None:
             total_pnl += b.daily_pnl
             has_pnl = True
+        baseline = _no_trade_pnl(b)
+        if baseline is not None:
+            baseline_pnl += baseline
+            has_baseline = True
     if has_pnl:
         result.total_daily_pnl = round(total_pnl, 2)
+    if has_baseline:
+        result.no_trade_total_pnl = round(baseline_pnl, 2)
+    if has_pnl and has_baseline:
+        result.op_alpha_total_pnl = round(total_pnl - baseline_pnl, 2)
 
     ticks = tick_map or {}
     for b in breakdowns:
@@ -389,6 +410,12 @@ def build_operation_evaluation(
         tick = ticks.get(code) or ticks.get(code.upper()) or {}
         day = intraday_from_tick(tick if isinstance(tick, dict) else None)
         label, watch = _classify_operation(b, pct, day)
+        no_trade = _no_trade_pnl(b)
+        alpha = (
+            round((b.daily_pnl or 0.0) - no_trade, 2)
+            if (b.daily_pnl is not None and no_trade is not None)
+            else None
+        )
         buy_avg = b.trade_summary.buy_avg
         range_pos = (
             buy_position_in_range(buy_avg, day) if buy_avg is not None else None
@@ -408,6 +435,8 @@ def build_operation_evaluation(
                 buy_avg=buy_avg,
                 range_position=range_pos,
                 intraday=day,
+                no_trade_pnl=no_trade,
+                op_alpha_pnl=alpha,
             )
         )
 
@@ -417,7 +446,12 @@ def build_operation_evaluation(
 
     # 做得好的
     for s in result.stocks:
-        if s.daily_pnl is not None and s.daily_pnl > 5000 and s.sell_volume > s.buy_volume:
+        traded = s.buy_volume > 0 or s.sell_volume > 0
+        if traded and s.op_alpha_pnl is not None and s.op_alpha_pnl > 2000:
+            result.positives.append(
+                f"{_sym(s)}：操作相对不操作多赚 {_fmt_pnl(s.op_alpha_pnl)}（{s.operation_label}）"
+            )
+        elif s.daily_pnl is not None and s.daily_pnl > 5000 and s.sell_volume > s.buy_volume:
             result.positives.append(
                 f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}，{s.operation_label}（卖{s.sell_volume}/买{s.buy_volume}）"
             )
@@ -438,7 +472,11 @@ def build_operation_evaluation(
                     f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}（{s.pct_chg:+.2f}%），持股浮盈未调仓"
                 )
             continue
-        if s.daily_pnl is not None and s.daily_pnl < -2000:
+        if s.op_alpha_pnl is not None and s.op_alpha_pnl < -2000:
+            result.improvements.append(
+                f"{_sym(s)}：操作相对不操作少赚/多亏 {_fmt_pnl(s.op_alpha_pnl)}，{s.operation_label} — {s.watch_note}"
+            )
+        elif s.daily_pnl is not None and s.daily_pnl < -2000:
             result.improvements.append(
                 f"{_sym(s)}：当日{_fmt_pnl(s.daily_pnl)}，{s.operation_label} — {s.watch_note}"
             )
@@ -461,12 +499,30 @@ def build_operation_evaluation(
             )
 
     score = 7.0
-    if result.total_daily_pnl is not None:
+    # 核心评分改为“操作后 vs 不操作基线”的增量价值（alpha）
+    if result.op_alpha_total_pnl is not None:
+        if result.op_alpha_total_pnl >= 5000:
+            score += 1.2
+        elif result.op_alpha_total_pnl > 0:
+            score += 0.8
+        elif result.op_alpha_total_pnl <= -5000:
+            score -= 1.6
+        else:
+            score -= 1.1
+    elif result.total_daily_pnl is not None:
+        # 基线不可得时退化到旧逻辑
         if result.total_daily_pnl > 0:
             score += 1.0
         else:
             score -= 1.5
-    neg_ops = sum(1 for s in result.stocks if s.daily_pnl is not None and s.daily_pnl < 0 and s.buy_volume > 0)
+
+    neg_ops = sum(
+        1
+        for s in result.stocks
+        if s.op_alpha_pnl is not None
+        and s.op_alpha_pnl < 0
+        and (s.buy_volume > 0 or s.sell_volume > 0)
+    )
     if neg_ops >= 2:
         score -= 0.5
     if len(result.positives) >= 2:
@@ -513,7 +569,18 @@ def build_operation_evaluation(
     result.overall_score = score
     result.overall_grade = _grade(score)
 
-    if result.total_daily_pnl is not None and result.total_daily_pnl >= 0:
+    if result.op_alpha_total_pnl is not None:
+        if result.op_alpha_total_pnl >= 0:
+            result.summary_line = (
+                f"相对不操作基线，操作后多赚约 {_fmt_pnl(result.op_alpha_total_pnl)}，"
+                f"主动交易以{'止盈减仓' if any('止盈' in s.operation_label for s in result.stocks) else '调仓'}为主"
+            )
+        else:
+            result.summary_line = (
+                f"相对不操作基线，操作后少赚/多亏约 {_fmt_pnl(result.op_alpha_total_pnl)}，"
+                "宜复盘买卖节奏与仓位纪律"
+            )
+    elif result.total_daily_pnl is not None and result.total_daily_pnl >= 0:
         result.summary_line = (
             f"盈利日约 {_fmt_pnl(result.total_daily_pnl)}，"
             f"主动交易以{'止盈减仓' if any('止盈' in s.operation_label for s in result.stocks) else '调仓'}为主"
@@ -608,6 +675,17 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
     ]
     if ev.total_daily_pnl is not None:
         lines.append(f"当日盈亏合计（估算）：{_fmt_pnl(ev.total_daily_pnl)}")
+    if (
+        ev.no_trade_total_pnl is not None
+        and ev.total_daily_pnl is not None
+        and ev.op_alpha_total_pnl is not None
+    ):
+        lines.append(
+            "基线对比（不操作）："
+            f"不操作约 {_fmt_pnl(ev.no_trade_total_pnl)}；"
+            f"操作后约 {_fmt_pnl(ev.total_daily_pnl)}；"
+            f"操作增量 {_fmt_pnl(ev.op_alpha_total_pnl)}"
+        )
     lines.append(
         f"委托 {ev.order_count} 笔 · 已撤 {ev.cancelled_count} · 成交 {ev.trade_count} 条"
     )
@@ -698,7 +776,11 @@ def operation_eval_to_dict(ev: DailyOperationEval) -> dict:
                 "current_volume": s.current_volume,
                 "operation_label": s.operation_label,
                 "watch_note": s.watch_note,
+                "no_trade_pnl": s.no_trade_pnl,
+                "op_alpha_pnl": s.op_alpha_pnl,
             }
             for s in ev.stocks
         ],
+        "no_trade_total_pnl": ev.no_trade_total_pnl,
+        "op_alpha_total_pnl": ev.op_alpha_total_pnl,
     }
