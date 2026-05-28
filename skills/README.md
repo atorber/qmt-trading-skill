@@ -1,6 +1,6 @@
 # Agent Skills
 
-本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **21 个**，均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
+本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **22 个**，均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
 
 在线文档：
 
@@ -25,6 +25,7 @@
 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
 | [qmt-bridge-order-ops](qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
+| [qmt-bridge-kline-backfill](qmt-bridge-kline-backfill/SKILL.md) | 补齐近N日指数日K | `复盘前先补齐近3日K线` · `检查为什么近3日量能数据不足` |
 | [qmt-bridge-return-analysis](qmt-bridge-return-analysis/SKILL.md) | 累计涨幅/涨跌概率 | `评估持仓涨幅概率并总结明日策略` · `1/5/10/30日阶段强弱` · `量价形态次日统计` |
 | [qmt-bridge-market-watch](qmt-bridge-market-watch/SKILL.md) | 自选快照 | `自选行情快照` · `盘前看下指数和自选涨跌` |
 | [qmt-bridge-sector-theme](qmt-bridge-sector-theme/SKILL.md) | 板块排序 | `板块内涨幅排名` · `今天行业强弱怎么排` |
