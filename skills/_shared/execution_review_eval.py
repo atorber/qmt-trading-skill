@@ -176,12 +176,37 @@ def _ensure_index_daily_cached(client, count: int) -> None:
         pass
 
 
+def _is_history_stale(common_dates: list[str], max_age_days: int = 4) -> bool:
+    """判断指数日K公共日期是否陈旧。
+
+    说明：
+    - 交易日序列应至少覆盖最近几天；
+    - 若最近可用日期距离今天超过阈值（默认4天，覆盖周末）则视为陈旧。
+    """
+    if not common_dates:
+        return True
+    latest = common_dates[-1]
+    if len(latest) != 8 or not latest.isdigit():
+        return True
+    try:
+        from datetime import date, datetime
+
+        d = datetime.strptime(latest, "%Y%m%d").date()
+        age = (date.today() - d).days
+        return age > max_age_days
+    except Exception:
+        return True
+
+
 def fetch_market_turnover_history(
     client,
     days: int = 3,
 ) -> list[TurnoverDay]:
     """拉取近 N 个交易日两市成交额序列（亿元）。"""
-    count = max(days + 3, 8)
+    # 适度扩大回看窗口，降低“只拿到很早旧数据”的概率
+    count = max(days + 15, 30)
+    # 按用户要求：每次复盘都先尝试补齐近几日指数日K，再读取
+    _ensure_index_daily_cached(client, count)
     sh_map = _kline_amount_yuan_by_date(
         _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
     )
@@ -192,7 +217,8 @@ def fetch_market_turnover_history(
         sz_map = _kline_amount_yuan_by_date(
             _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
         )
-    if len(set(sh_map) & set(sz_map)) < days:
+    common = sorted(set(sh_map) & set(sz_map))
+    if len(common) < days or _is_history_stale(common):
         _ensure_index_daily_cached(client, count)
         sh_map = _kline_amount_yuan_by_date(
             _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
@@ -204,10 +230,13 @@ def fetch_market_turnover_history(
             sz_map = _kline_amount_yuan_by_date(
                 _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
             )
+    common = sorted(set(sh_map) & set(sz_map))
+    # 仅使用真实两市成交额；若数据仍不足或陈旧，返回空并由上层如实提示“历史不足”
+    if len(common) < days or _is_history_stale(common):
+        return []
 
-    common = sorted(set(sh_map) & set(sz_map))[-days:]
     result: list[TurnoverDay] = []
-    for dt in common:
+    for dt in common[-days:]:
         yi = round((sh_map[dt] + sz_map[dt]) / 1e8, 2)
         zone = classify_volume_zone(yi)
         result.append(

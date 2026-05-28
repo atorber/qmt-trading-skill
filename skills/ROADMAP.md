@@ -19,6 +19,7 @@
 | P0 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | ✅ | `portfolio_snapshot.py` |
 | P0 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | ✅ | `daily_pnl_snapshot.py` |
 | P0 | [qmt-bridge-order-ops](qmt-bridge-order-ops/SKILL.md) | ✅ | `list_orders.py`, `cancel_orders.py` |
+| P0 | [qmt-bridge-kline-backfill](qmt-bridge-kline-backfill/SKILL.md) | ✅ | `backfill_recent_index_kline.py` |
 | P1 | [qmt-bridge-return-analysis](qmt-bridge-return-analysis/SKILL.md) | ✅ | `return_probability_analysis.py` |
 | P1 | [qmt-bridge-market-watch](qmt-bridge-market-watch/SKILL.md) | ✅ | `watchlist_snapshot.py` |
 | P1 | [qmt-bridge-sector-theme](qmt-bridge-sector-theme/SKILL.md) | ✅ | `sector_rank.py` |
