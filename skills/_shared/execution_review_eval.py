@@ -15,7 +15,6 @@ from trading_philosophy import (
     apply_trading_philosophy,
     buy_position_in_range,
     classify_buy_timing,
-    classify_volume_zone,
     intraday_from_tick,
 )
 
@@ -97,156 +96,17 @@ def market_turnover_yi_from_tick_map(tick_map: dict) -> float | None:
     return round((sh_yuan + sz_yuan) / 1e8, 2)
 
 
-def _record_trade_date(row: dict) -> str:
-    for key in ("index", "date", "time", "datetime"):
-        raw = row.get(key)
-        if raw is None:
-            continue
-        s = str(raw).strip()
-        if s.isdigit() and len(s) >= 8:
-            return s[:8]
-        if s.isdigit() and len(s) >= 13:
-            from datetime import datetime
-
-            try:
-                return datetime.fromtimestamp(int(s[:13]) / 1000).strftime("%Y%m%d")
-            except (ValueError, OSError):
-                continue
-    return ""
-
-
-def _kline_amount_yuan_by_date(records: list[dict]) -> dict[str, float]:
-    out: dict[str, float] = {}
-    for row in records:
-        if not isinstance(row, dict):
-            continue
-        dt = _record_trade_date(row)
-        amt = row.get("amount")
-        if not dt or amt is None:
-            continue
-        try:
-            val = float(amt)
-        except (TypeError, ValueError):
-            continue
-        if val > 0:
-            out[dt] = val
-    return out
-
-
-def _load_index_daily_records(client, code: str, count: int) -> list[dict]:
-    from kline_util import records_to_list
-
-    stocks = [code]
-    for loader in (
-        lambda: client.get_local_data(stocks=stocks, period="1d", count=count),
-        lambda: client.get_history_ex(stocks=stocks, period="1d", count=count),
-    ):
-        try:
-            raw = loader()
-            data = raw.get("data", raw) if isinstance(raw, dict) else raw
-            if not isinstance(data, dict):
-                continue
-            recs = data.get(code)
-            if recs is None:
-                recs = data.get(code.upper())
-            if recs is None:
-                continue
-            parsed = records_to_list(recs)
-            if parsed:
-                return parsed
-        except Exception:
-            continue
-    return []
-
-
-def _ensure_index_daily_cached(client, count: int) -> None:
-    """指数日 K 缺失时触发服务端下载（仅上证+深证综指）。"""
-    from datetime import date, timedelta
-
-    try:
-        end = date.today().strftime("%Y%m%d")
-        start = (date.today() - timedelta(days=count + 14)).strftime("%Y%m%d")
-        client.download_batch(
-            [_TURNOVER_SH_INDEX, _TURNOVER_SZ_INDEX],
-            period="1d",
-            start_time=start,
-            end_time=end,
-        )
-    except Exception:
-        pass
-
-
-def _is_history_stale(common_dates: list[str], max_age_days: int = 4) -> bool:
-    """判断指数日K公共日期是否陈旧。
-
-    说明：
-    - 交易日序列应至少覆盖最近几天；
-    - 若最近可用日期距离今天超过阈值（默认4天，覆盖周末）则视为陈旧。
-    """
-    if not common_dates:
-        return True
-    latest = common_dates[-1]
-    if len(latest) != 8 or not latest.isdigit():
-        return True
-    try:
-        from datetime import date, datetime
-
-        d = datetime.strptime(latest, "%Y%m%d").date()
-        age = (date.today() - d).days
-        return age > max_age_days
-    except Exception:
-        return True
-
-
 def fetch_market_turnover_history(
     client,
     days: int = 3,
 ) -> list[TurnoverDay]:
-    """拉取近 N 个交易日两市成交额序列（亿元）。"""
-    # 适度扩大回看窗口，降低“只拿到很早旧数据”的概率
-    count = max(days + 15, 30)
-    # 按用户要求：每次复盘都先尝试补齐近几日指数日K，再读取
-    _ensure_index_daily_cached(client, count)
-    sh_map = _kline_amount_yuan_by_date(
-        _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
-    )
-    sz_map = _kline_amount_yuan_by_date(
-        _load_index_daily_records(client, _TURNOVER_SZ_INDEX, count)
-    )
-    if not sz_map:
-        sz_map = _kline_amount_yuan_by_date(
-            _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
-        )
-    common = sorted(set(sh_map) & set(sz_map))
-    if len(common) < days or _is_history_stale(common):
-        _ensure_index_daily_cached(client, count)
-        sh_map = _kline_amount_yuan_by_date(
-            _load_index_daily_records(client, _TURNOVER_SH_INDEX, count)
-        )
-        sz_map = _kline_amount_yuan_by_date(
-            _load_index_daily_records(client, _TURNOVER_SZ_INDEX, count)
-        )
-        if not sz_map:
-            sz_map = _kline_amount_yuan_by_date(
-                _load_index_daily_records(client, _TURNOVER_SZ_FALLBACK, count)
-            )
-    common = sorted(set(sh_map) & set(sz_map))
-    # 仅使用真实两市成交额；若数据仍不足或陈旧，返回空并由上层如实提示“历史不足”
-    if len(common) < days or _is_history_stale(common):
-        return []
+    """拉取近 N 个交易日两市成交额序列（亿元）。
 
-    result: list[TurnoverDay] = []
-    for dt in common[-days:]:
-        yi = round((sh_map[dt] + sz_map[dt]) / 1e8, 2)
-        zone = classify_volume_zone(yi)
-        result.append(
-            TurnoverDay(
-                trade_date=dt,
-                turnover_yi=yi,
-                zone_label=zone.label if zone else "—",
-            )
-        )
-    return result
+    通过 get_full_tick 当日成交额 + 本地日缓存构建序列，复盘热路径不读历史 K 线。
+    """
+    from market_turnover_util import fetch_turnover_history
+
+    return fetch_turnover_history(client, days)
 
 
 def fetch_market_turnover_yi(client) -> float | None:

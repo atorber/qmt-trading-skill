@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
@@ -35,9 +36,22 @@ logger = logging.getLogger("qmt_bridge")
 # ── 常量 ──────────────────────────────────────────────────────
 
 # 逐只下载，单只股票的固定超时（秒）。
+# 日线默认 30s：含 supply 提交后等待本地落盘 + get_local_data 探测；网速慢时 5s 易误报 timeout。
 STOCK_TIMEOUT: dict[str, int] = {
-    "1m": 10, "5m": 10, "15m": 10, "30m": 5, "60m": 5, "1d": 5,
+    "1m": 10, "5m": 10, "15m": 10, "30m": 5, "60m": 5, "1d": 30,
 }
+
+
+def kline_stock_timeout_sec(period: str) -> int:
+    """单只 K 线下载/校验超时。日线可用 QMT_BRIDGE_KLINE_DOWNLOAD_TIMEOUT_1D_SEC 覆盖。"""
+    if period == "1d":
+        raw = os.environ.get("QMT_BRIDGE_KLINE_DOWNLOAD_TIMEOUT_1D_SEC", "")
+        if raw.strip():
+            try:
+                return max(5, int(float(raw)))
+            except ValueError:
+                pass
+    return STOCK_TIMEOUT.get(period, 10)
 
 # 财务数据 future 轮询间隔（秒）
 POLL_INTERVAL = 0.5
@@ -198,7 +212,7 @@ def download_single_kline(
         "ok" | "timeout" | "error: ..." | "disconnected"
     """
     if timeout is None:
-        timeout = STOCK_TIMEOUT.get(period, 10)
+        timeout = kline_stock_timeout_sec(period)
     if incrementally is None:
         incrementally = not bool(start_time)
     param = {"incrementally": incrementally}
@@ -281,7 +295,7 @@ def download_history_data2_safe(
     client = xtdata.get_client()
     total = len(stock_list)
     results: dict[str, str] = {}
-    timeout = STOCK_TIMEOUT.get(period, 10)
+    timeout = kline_stock_timeout_sec(period)
 
     for i, code in enumerate(stock_list):
         try:
@@ -456,7 +470,7 @@ def download_kline_incremental(
     """
     t0 = time.time()
     client = xtdata.get_client()
-    effective_timeout = STOCK_TIMEOUT.get(period, 10)
+    effective_timeout = kline_stock_timeout_sec(period)
     incrementally = True
 
     logger.info("K线增量下载开始: %s, 股票 %d 只", period, len(stocks))

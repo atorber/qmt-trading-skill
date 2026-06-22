@@ -278,7 +278,7 @@ def assess_market_heat(
     if len(days) < 2:
         return (
             "数据不足",
-            "近3日成交额历史不足（需先下载指数日K：000001.SH、399106.SZ）",
+            "近3日成交额历史不足（本地日缓存缺少历史交易日；请连续收盘复盘累积，或 QMT 正常后运行 backfill --try-history）",
             [],
             [],
             days,

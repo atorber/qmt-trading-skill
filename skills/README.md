@@ -25,7 +25,7 @@
 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
 | [qmt-bridge-order-ops](qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
-| [qmt-bridge-kline-backfill](qmt-bridge-kline-backfill/SKILL.md) | 补齐近N日指数日K | `复盘前先补齐近3日K线` · `检查为什么近3日量能数据不足` |
+| [qmt-bridge-kline-backfill](qmt-bridge-kline-backfill/SKILL.md) | 近N日两市成交额校验/补齐 | `复盘前检查近3日量能` · `补齐上证深证近3日成交额` |
 | [qmt-bridge-return-analysis](qmt-bridge-return-analysis/SKILL.md) | 累计涨幅/涨跌概率 | `评估持仓涨幅概率并总结明日策略` · `1/5/10/30日阶段强弱` · `量价形态次日统计` |
 | [qmt-bridge-market-watch](qmt-bridge-market-watch/SKILL.md) | 自选快照 | `自选行情快照` · `盘前看下指数和自选涨跌` |
 | [qmt-bridge-sector-theme](qmt-bridge-sector-theme/SKILL.md) | 板块排序 | `板块内涨幅排名` · `今天行业强弱怎么排` |
@@ -47,7 +47,7 @@
 ```
 calendar → watchlist / sector-rank
     → download-financial → fundamental-screen
-    → return-analysis / watchlist → portfolio-risk → daily-pnl → execution-preview → trading → order-ops → daily-report → feishu-doc
+    → return-analysis / watchlist → portfolio-risk → daily-pnl → execution-preview → trading → order-ops → kline-backfill（可选）→ daily-report → feishu-doc
 ```
 
 ## 连接与编码
@@ -58,7 +58,7 @@ calendar → watchlist / sector-rank
 
 ## 共享模块
 
-[`_shared/common.py`](_shared/common.py) · [`kline_util.py`](_shared/kline_util.py) · [`financial_util.py`](_shared/financial_util.py) · [`positions_util.py`](_shared/positions_util.py) · [`stock_names.py`](_shared/stock_names.py) · [`trading_fmt.py`](_shared/trading_fmt.py) · [`orders_util.py`](_shared/orders_util.py) · [`pnl_util.py`](_shared/pnl_util.py) · [`pnl_display.py`](_shared/pnl_display.py) · [`table_fmt.py`](_shared/table_fmt.py) · [`feishu_doc.py`](_shared/feishu_doc.py)
+[`_shared/common.py`](_shared/common.py) · [`market_turnover_util.py`](_shared/market_turnover_util.py) · [`kline_util.py`](_shared/kline_util.py) · [`financial_util.py`](_shared/financial_util.py) · [`positions_util.py`](_shared/positions_util.py) · [`stock_names.py`](_shared/stock_names.py) · [`trading_fmt.py`](_shared/trading_fmt.py) · [`orders_util.py`](_shared/orders_util.py) · [`pnl_util.py`](_shared/pnl_util.py) · [`pnl_display.py`](_shared/pnl_display.py) · [`table_fmt.py`](_shared/table_fmt.py) · [`feishu_doc.py`](_shared/feishu_doc.py)
 
 ## Cursor 启用
 
