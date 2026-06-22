@@ -14,11 +14,11 @@ from execution_review_eval import (  # noqa: E402
 from pnl_util import DailyPnlBreakdown, TradeDaySummary  # noqa: E402
 
 
-def test_kline_amount_yuan_by_date_from_records():
-    from execution_review_eval import _kline_amount_yuan_by_date  # noqa: E402
+def test_amount_map_from_records():
+    from market_turnover_util import amount_map_from_records  # noqa: E402
 
     recs = [{"index": "20260522", "amount": 1_200_000_000_000}]
-    assert _kline_amount_yuan_by_date(recs) == {"20260522": 1_200_000_000_000.0}
+    assert amount_map_from_records(recs) == {"20260522": 1_200_000_000_000.0}
 
 
 def test_market_turnover_yi_from_tick_map():

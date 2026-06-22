@@ -1,6 +1,6 @@
 # Agent Skills
 
-**QMT Trading Skill** 在 [`skills/`](../skills/) 提供 **21 个 Agent Skills**（底层调用 **QMT Bridge** API），均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
+**QMT Trading Skill** 在 [`skills/`](../skills/) 提供 **22 个 Agent Skills**（底层调用 **QMT Bridge** API），均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
 
 **路线图**：[skills/ROADMAP.md](../skills/ROADMAP.md) · **总览**：[skills/README.md](../skills/README.md) · **开发命令**：[开发指南](development.md)
 
@@ -55,6 +55,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 | [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
 | [qmt-bridge-order-ops](../skills/qmt-bridge-order-ops/SKILL.md) | 查单、撤单 | `查今日委托和可撤单` · `撤销 order_id 为 xxx 的委托` |
+| [qmt-bridge-kline-backfill](../skills/qmt-bridge-kline-backfill/SKILL.md) | 近N日两市成交额校验/补齐 | `复盘前检查近3日量能` · `补齐上证深证近3日成交额` |
 | [qmt-bridge-return-analysis](../skills/qmt-bridge-return-analysis/SKILL.md) | 累计涨幅/概率 | `评估持仓涨幅概率并总结明日策略` · `1/5/10/30日阶段强弱` · `量价形态次日统计` |
 | [qmt-bridge-market-watch](../skills/qmt-bridge-market-watch/SKILL.md) | 自选快照 | `自选行情快照` · `盘前看下指数和自选涨跌` |
 | [qmt-bridge-sector-theme](../skills/qmt-bridge-sector-theme/SKILL.md) | 板块排序 | `板块内涨幅排名` · `今天行业强弱怎么排` |
@@ -90,6 +91,7 @@ calendar → watchlist / sector-rank
 | 盈亏 | 当日盈亏表 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
 | 执行 | 预览后下单 | `预览这笔买单` · `用 Bridge 下一笔买入（先预览）` |
 | 复盘 | 委托/成交/操作评价 | `今日操作评估` · `生成今日交易复盘` |
+| 量能 | 近3日两市成交额（复盘前） | `复盘前检查近3日量能` · `补齐上证深证近3日成交额` |
 | 飞书 | 复盘/盈亏/分析上传 | `同步今日复盘到飞书文档` |
 
 ## 当日盈亏（daily-pnl）

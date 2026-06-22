@@ -62,6 +62,17 @@ def main():
             print(f"ok, keys={{len(data)}}")
         """))
 
+    # 3b. get_market_data — /api/market/market_data 用的接口（读本地缓存，亦可能 BSON）
+    print("\n3b. get_market_data (指数 amount, count=5)")
+    for code in ["000001.SH", "399106.SZ", "399001.SZ"]:
+        run_test(code, textwrap.dedent(f"""\
+            from xtquant import xtdata
+            data = xtdata.get_market_data(
+                field_list=['amount'], stock_list=['{code}'],
+                period='1d', count=5)
+            print(f"ok, fields={{list(data.keys()) if data else 0}}")
+        """))
+
     # 4. get_full_tick — API 端点 /api/market/full_tick 用的接口
     print("\n4. get_full_tick")
     run_test("1只", textwrap.dedent("""\

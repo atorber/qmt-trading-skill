@@ -103,6 +103,7 @@ class Settings:
     divid_factors_timeout_sec: float = 8.0      # /divid_factors 默认执行超时（秒）
     divid_factors_slow_log_sec: float = 1.0     # /divid_factors 慢调用阈值（秒）
     market_data_timeout_sec: float = 20.0       # /market_data 默认执行超时（秒）
+    kline_download_timeout_1d_sec: int = 30     # 单只日线 K 线下载校验超时（秒）
 
     @classmethod
     def from_env(cls, env_path: Path | None = None) -> "Settings":
@@ -185,6 +186,9 @@ class Settings:
             ),
             market_data_timeout_sec=float(
                 os.environ.get("QMT_BRIDGE_MARKET_DATA_TIMEOUT_SEC", "20")
+            ),
+            kline_download_timeout_1d_sec=int(
+                os.environ.get("QMT_BRIDGE_KLINE_DOWNLOAD_TIMEOUT_1D_SEC", "30")
             ),
         )
 

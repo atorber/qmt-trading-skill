@@ -86,7 +86,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
   --host 127.0.0.1 --port 8080 --api-key KEY --market-turnover-yi 12500
 ```
 
-两市成交额默认自动拉取（上证 `000001.SH` + 深证 `399106.SZ`，缺则用 `399001.SZ` 的 tick `amount` 汇总）；可用 `--market-turnover-yi` 覆盖。**近 3 日市场热度**由指数日 K 自动汇总并写入评价。近 3 日个股涨幅可用 `--no-philosophy-fetch` 关闭（不影响量能序列拉取）。
+两市成交额默认自动拉取（上证 `000001.SH` + 深证 `399106.SZ`，缺则用 `399001.SZ` 的 tick `amount` 汇总）；可用 `--market-turnover-yi` 覆盖。**近 3 日市场热度**由 `get_full_tick` + `reports/market_turnover_daily.json` 缓存汇总（实现见 `_shared/market_turnover_util.py`）；历史缺口见 [qmt-bridge-kline-backfill](../qmt-bridge-kline-backfill/SKILL.md)。近 3 日个股涨幅可用 `--no-philosophy-fetch` 关闭（不影响量能序列拉取）。
 
 ## 安全
 
