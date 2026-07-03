@@ -90,24 +90,12 @@ async def _lifespan(app: FastAPI):
 
     # 如果配置中启用了交易模块，则初始化 xttrader 交易管理器
     if settings.trading_enabled:
-        try:
-            from .trading.manager import XtTraderManager
+        from .trading.bootstrap import init_trading_on_startup
 
-            # 创建交易管理器实例，传入 miniQMT 安装路径和资金账号
-            manager = XtTraderManager(
-                mini_qmt_path=settings.mini_qmt_path,
-                account_id=settings.trading_account_id,
-            )
-            # 连接到 miniQMT 客户端（底层调用 xttrader.connect()）
-            manager.connect()
-            # 将管理器存储到 app.state，供各路由通过依赖注入获取
-            app.state.trader_manager = manager
-            logger.info("Trading module initialized")
-        except Exception:
-            logger.exception("Failed to initialize trading module")
-            app.state.trader_manager = None
+        await init_trading_on_startup(app, settings)
     else:
         app.state.trader_manager = None
+        app.state.trading_init_error = None
 
     # 初始化通知模块（独立于交易模块，可单独启用）
     if settings.notify_enabled:

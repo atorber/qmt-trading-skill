@@ -10,9 +10,10 @@
 - xtdata.get_quote_server_status()    — 获取行情服务器状态
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query, Request
 from xtquant import xtdata
 
+from ..config import Settings, get_settings
 from ..helpers import _numpy_to_python
 
 router = APIRouter(prefix="/api/meta", tags=["meta"])
@@ -136,15 +137,27 @@ def get_connection_status():
 
 
 @router.get("/health")
-def health_check():
+def health_check(
+    request: Request,
+    settings: Settings = Depends(get_settings),
+):
     """健康检查端点。
 
     用于负载均衡器或监控系统探测服务是否正常运行。
 
     Returns:
-        status: "ok" 表示服务正常。
+        status: "ok" 表示 HTTP 服务正常。
+        trading: 交易模块连接状态（仅 trading_enabled 时返回）。
     """
-    return {"status": "ok"}
+    out: dict = {"status": "ok"}
+    if settings.trading_enabled:
+        manager = getattr(request.app.state, "trader_manager", None)
+        out["trading"] = {
+            "enabled": True,
+            "connected": manager is not None,
+            "error": getattr(request.app.state, "trading_init_error", None),
+        }
+    return out
 
 
 @router.get("/quote_server_status")

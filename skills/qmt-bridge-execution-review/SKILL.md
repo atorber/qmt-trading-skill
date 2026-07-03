@@ -22,12 +22,14 @@ description: >-
 
 | 脚本 | 作用 |
 |------|------|
-| `scripts/daily_trade_report.py` | orders + trades + 操作评价；`--json`；`--feishu-md` 飞书全文 |
+| `scripts/daily_trade_report.py` | 单账户：orders + trades + 操作评价；`--json`；`--feishu-md` 飞书全文 |
+| `scripts/combined_trade_report.py` | **全账户综合**：合并普通户+信用户持仓与成交，不区分账户；`--feishu-md` |
 
 ```bash
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --json --api-key KEY
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY --feishu-md
+python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY --feishu-md
 ```
 
 | 参数 | 说明 |

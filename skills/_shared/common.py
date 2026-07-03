@@ -55,23 +55,66 @@ def add_client_args(parser) -> None:
     parser.add_argument(
         "--account-id",
         default=None,
-        help="资金账号（默认 QMT_BRIDGE_TRADING_ACCOUNT_ID 或空）",
+        help="资金账号（默认按 QMT_BRIDGE_DEFAULT_ACCOUNT 取普通户/信用户）",
+    )
+    parser.add_argument(
+        "--account-type",
+        default=None,
+        help="账户类型 STOCK / CREDIT（默认按账号自动解析）",
     )
 
 
-def resolve_connection(args) -> tuple[str, int, str, str]:
-    """解析 host/port/api_key/account_id。"""
+def _default_account_from_env() -> tuple[str, str]:
+    """按 QMT_BRIDGE_STOCK/CREDIT_ACCOUNT_ID 与 DEFAULT_ACCOUNT 解析默认账户。"""
+    from qmt_bridge.server.trading.accounts import resolve_default_trading_account
+
+    return resolve_default_trading_account(
+        stock_account_id=os.environ.get("QMT_BRIDGE_STOCK_ACCOUNT_ID", ""),
+        credit_account_id=os.environ.get("QMT_BRIDGE_CREDIT_ACCOUNT_ID", ""),
+        default_account=os.environ.get("QMT_BRIDGE_DEFAULT_ACCOUNT", "stock"),
+    )
+
+
+def resolve_connection(args) -> tuple[str, int, str, str, str]:
+    """解析 host/port/api_key/account_id/account_type。"""
     host = args.host or os.environ.get("QMT_BRIDGE_HOST", "127.0.0.1")
     if host in ("0.0.0.0", "::"):
         host = "127.0.0.1"
     port = args.port if args.port is not None else int(os.environ.get("QMT_BRIDGE_PORT", "8000"))
     api_key = args.api_key if args.api_key is not None else os.environ.get("QMT_BRIDGE_API_KEY", "")
-    account_id = (
-        args.account_id
-        if args.account_id is not None
-        else os.environ.get("QMT_BRIDGE_TRADING_ACCOUNT_ID", "")
+    account_id = args.account_id
+    account_type = getattr(args, "account_type", None)
+    if account_id is None:
+        default_id, default_type = _default_account_from_env()
+        account_id = default_id
+        if account_type is None:
+            account_type = default_type
+    elif account_type is None:
+        account_type = resolve_account_type_for_id(account_id)
+    return host, port, api_key, account_id, account_type
+
+
+def resolve_account_type_for_id(account_id: str, explicit_type: str = "") -> str:
+    """按显式参数或普通户/信用户配置解析 account_type。"""
+    from qmt_bridge.server.trading.accounts import (
+        build_account_type_map,
+        resolve_account_type,
     )
-    return host, port, api_key, account_id
+
+    if explicit_type:
+        return explicit_type
+    default_id, default_type = _default_account_from_env()
+    type_map = build_account_type_map(
+        os.environ.get("QMT_BRIDGE_STOCK_ACCOUNT_ID", ""),
+        os.environ.get("QMT_BRIDGE_CREDIT_ACCOUNT_ID", ""),
+    )
+    return resolve_account_type(
+        account_id,
+        server_account_id=default_id,
+        server_default_type=default_type,
+        explicit_type="",
+        type_map=type_map,
+    )
 
 
 def make_client(args, *, require_api_key: bool = True):
@@ -85,7 +128,7 @@ def make_client(args, *, require_api_key: bool = True):
         )
         sys.exit(2)
 
-    host, port, api_key, account_id = resolve_connection(args)
+    host, port, api_key, account_id, account_type = resolve_connection(args)
     if require_api_key and not api_key:
         print(
             "错误: 未设置 API Key。请配置 QMT_BRIDGE_API_KEY 或传入 --api-key",

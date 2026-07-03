@@ -5,10 +5,18 @@ from __future__ import annotations
 from common import call_api, unwrap_data
 
 
-def fetch_position_codes(client, account_id: str) -> list[str]:
+def fetch_position_codes(client, account_id: str, account_type: str = "") -> list[str]:
     """查询当前持仓股票代码（去重、保序）。"""
+    from common import resolve_account_type_for_id
+
+    if not account_type:
+        account_type = resolve_account_type_for_id(account_id)
     positions = unwrap_data(
-        call_api(client.query_positions, account_id=account_id)
+        call_api(
+            client.query_positions,
+            account_id=account_id,
+            account_type=account_type,
+        )
     )
     if not isinstance(positions, list):
         return []

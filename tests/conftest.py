@@ -28,7 +28,7 @@ def test_settings() -> Settings:
         trading_enabled=True,
         notify_enabled=False,
         require_auth_for_data=False,
-        trading_account_id="12345678",
+        stock_account_id="12345678",
         mini_qmt_path="C:\\mock\\qmt",
         xtdata_lock_wait_timeout_sec=5.0,
         divid_factors_timeout_sec=2.0,

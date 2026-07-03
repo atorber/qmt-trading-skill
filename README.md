@@ -8,6 +8,19 @@
 
 ---
 
+## 快速启动
+
+```
+# 使用环境变量配置
+qmt-server
+
+# 指定参数
+qmt-server --port 8080 --log-level debug --trading --api-key test-auto --mini-qmt-path "C:\中山证券QMT实盘交易端\userdata_mini" --stock-account-id 普通账户ID --credit-account-id 信用账户ID
+
+# 默认 API 账户为普通户（stock）；改用信用户时加 
+qmt-server --port 8080 --log-level debug --trading --api-key test-auto --mini-qmt-path "C:\中山证券QMT实盘交易端\userdata_mini" --stock-account-id 普通账户ID --credit-account-id 信用账户ID --default-account credit
+```
+
 ## 架构关系
 
 三层自下而上依赖，职责分离：

@@ -36,7 +36,9 @@ def main():
         --trading:        启用交易模块（需要 miniQMT 客户端运行）
         --api-key:        API 密钥，用于保护交易等敏感接口
         --mini-qmt-path:  miniQMT 安装目录路径（启用交易时必须指定）
-        --account-id:     交易资金账号
+        --stock-account-id:  普通证券账户 ID
+        --credit-account-id: 信用两融账户 ID
+        --default-account:   默认 API/订阅账户 stock | credit（默认 stock）
     """
     # 优先从 .env 文件加载环境变量，使得后续参数默认值可以读取到 .env 中的配置
     _load_env_file()
@@ -86,24 +88,36 @@ def main():
         help="Path to miniQMT installation (for trading)",
     )
     parser.add_argument(
-        "--account-id",
-        default=os.environ.get("QMT_BRIDGE_TRADING_ACCOUNT_ID", ""),
-        help="Trading account ID",
+        "--stock-account-id",
+        default=os.environ.get("QMT_BRIDGE_STOCK_ACCOUNT_ID", ""),
+        help="Stock (security) account ID",
+    )
+    parser.add_argument(
+        "--credit-account-id",
+        default=os.environ.get("QMT_BRIDGE_CREDIT_ACCOUNT_ID", ""),
+        help="Credit (margin) account ID",
+    )
+    parser.add_argument(
+        "--default-account",
+        default=os.environ.get("QMT_BRIDGE_DEFAULT_ACCOUNT", "stock"),
+        choices=["stock", "credit"],
+        help="Default account when API omits account_id (default: stock)",
     )
 
     args = parser.parse_args()
 
-    # 用命令行参数构建 Settings 对象（覆盖环境变量中的默认值）
-    settings = Settings(
-        host=args.host,
-        port=args.port,
-        log_level=args.log_level,
-        workers=args.workers,
-        api_key=args.api_key,
-        trading_enabled=args.trading,
-        mini_qmt_path=args.mini_qmt_path,
-        trading_account_id=args.account_id,
-    )
+    # 先加载 .env 全量配置，再用命令行参数覆盖
+    settings = Settings.from_env()
+    settings.host = args.host
+    settings.port = args.port
+    settings.log_level = args.log_level
+    settings.workers = args.workers
+    settings.api_key = args.api_key
+    settings.trading_enabled = args.trading
+    settings.mini_qmt_path = args.mini_qmt_path
+    settings.stock_account_id = args.stock_account_id
+    settings.credit_account_id = args.credit_account_id
+    settings.default_account = args.default_account
     # 将配置对象设置为全局单例，供后续模块通过 get_settings() 获取
     reset_settings(settings)
 

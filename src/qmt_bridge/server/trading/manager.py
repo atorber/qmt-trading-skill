@@ -27,16 +27,24 @@ class XtTraderManager:
         account_id: 默认交易账户 ID。
     """
 
-    def __init__(self, mini_qmt_path: str = "", account_id: str = ""):
+    def __init__(
+        self,
+        mini_qmt_path: str = "",
+        account_id: str = "",
+        account_type: str = "",
+        account_type_map: dict[str, str] | None = None,
+    ):
         self.mini_qmt_path = mini_qmt_path
         self.account_id = account_id
+        self.account_type = account_type
+        self.account_type_map = account_type_map or {}
         self._trader = None      # XtQuantTrader 实例，连接后赋值
         self._account = None     # 默认 StockAccount 实例
+        self._accounts: dict[tuple[str, str], object] = {}
 
     def connect(self):
         """初始化并连接 XtQuantTrader 实例。"""
         from xtquant.xttrader import XtQuantTrader
-        from xtquant.xttype import StockAccount
 
         from .callbacks import BridgeTraderCallback
 
@@ -44,21 +52,52 @@ class XtTraderManager:
         session_id = hash(path) & 0xFFFF
 
         self._trader = XtQuantTrader(path, session_id)
-        self._account = StockAccount(self.account_id)
+        self._account = self._resolve_account(self.account_id, self.account_type)
         self._callback = BridgeTraderCallback()
 
         self._trader.register_callback(self._callback)
         self._trader.start()
 
-        result = self._trader.connect()
-        if result != 0:
-            raise RuntimeError(f"XtQuantTrader connect failed: {result}")
+        try:
+            result = self._trader.connect()
+            if result != 0:
+                raise RuntimeError(f"XtQuantTrader connect failed: {result}")
+        except Exception:
+            self.disconnect()
+            raise
 
-        result = self._trader.subscribe(self._account)
-        if result != 0:
-            logger.warning("subscribe_account returned %s", result)
+        from .accounts import normalize_account_type
 
-        logger.info("XtQuantTrader connected, account=%s", self.account_id)
+        subscribe_targets: list[tuple[str, str]] = []
+        seen: set[tuple[str, str]] = set()
+
+        def _add_subscribe(aid: str, atype: str) -> None:
+            key = ((aid or "").strip(), normalize_account_type(atype))
+            if key[0] and key not in seen:
+                seen.add(key)
+                subscribe_targets.append(key)
+
+        _add_subscribe(self.account_id, self.account_type)
+        for aid, atype in self.account_type_map.items():
+            _add_subscribe(aid, atype)
+
+        for aid, atype in subscribe_targets:
+            acc = self._resolve_account(aid, atype)
+            result = self._trader.subscribe(acc)
+            if result != 0:
+                logger.warning(
+                    "subscribe_account returned %s (account=%s type=%s)",
+                    result,
+                    aid,
+                    atype or "STOCK",
+                )
+
+        logger.info(
+            "XtQuantTrader connected, default_account=%s type=%s, subscribed=%s",
+            self.account_id,
+            self.account_type or "STOCK",
+            len(subscribe_targets),
+        )
 
     def disconnect(self):
         """断开连接并清理资源。"""
@@ -69,12 +108,33 @@ class XtTraderManager:
                 logger.exception("Error stopping XtQuantTrader")
             self._trader = None
 
-    def _resolve_account(self, account_id: str = ""):
-        """解析交易账户，返回 StockAccount 实例。"""
-        if account_id and account_id != self.account_id:
-            from xtquant.xttype import StockAccount
-            return StockAccount(account_id)
-        return self._account
+    def _resolve_account(self, account_id: str = "", account_type: str = ""):
+        """解析交易账户，返回 StockAccount 实例（信用户须传 CREDIT）。"""
+        from xtquant.xttype import StockAccount
+
+        from .accounts import resolve_account_type
+
+        aid = (account_id or self.account_id or "").strip()
+        if not aid:
+            return self._account
+        atype = resolve_account_type(
+            aid,
+            server_account_id=self.account_id,
+            server_default_type=self.account_type,
+            explicit_type=account_type,
+            type_map=self.account_type_map,
+        )
+        key = (aid, atype)
+        cached = self._accounts.get(key)
+        if cached is not None:
+            if aid == self.account_id:
+                self._account = cached
+            return cached
+        acc = StockAccount(aid, atype) if atype else StockAccount(aid)
+        self._accounts[key] = acc
+        if aid == self.account_id:
+            self._account = acc
+        return acc
 
     # ------------------------------------------------------------------
     # 委托操作
@@ -126,29 +186,36 @@ class XtTraderManager:
     # 查询操作
     # ------------------------------------------------------------------
 
-    def query_orders(self, account_id: str = "", cancelable_only: bool = False):
+    def query_orders(
+        self,
+        account_id: str = "",
+        cancelable_only: bool = False,
+        account_type: str = "",
+    ):
         """查询当日委托列表 → _trader.query_stock_orders()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         return self._trader.query_stock_orders(account, cancelable_only)
 
-    def query_positions(self, account_id: str = ""):
+    def query_positions(self, account_id: str = "", account_type: str = ""):
         """查询当前持仓列表 → _trader.query_stock_positions()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         return self._trader.query_stock_positions(account)
 
-    def query_asset(self, account_id: str = ""):
+    def query_asset(self, account_id: str = "", account_type: str = ""):
         """查询账户资产信息 → _trader.query_stock_asset()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         return self._trader.query_stock_asset(account)
 
-    def query_trades(self, account_id: str = ""):
+    def query_trades(self, account_id: str = "", account_type: str = ""):
         """查询当日成交列表 → _trader.query_stock_trades()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         return self._trader.query_stock_trades(account)
 
-    def query_order_detail(self, order_id: int = 0, account_id: str = ""):
+    def query_order_detail(
+        self, order_id: int = 0, account_id: str = "", account_type: str = ""
+    ):
         """根据委托编号查询单笔委托详情（遍历过滤）。"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         orders = self._trader.query_stock_orders(account, False)
         if orders:
             for o in orders:
@@ -156,14 +223,18 @@ class XtTraderManager:
                     return o
         return None
 
-    def query_single_order(self, order_id: int, account_id: str = ""):
+    def query_single_order(
+        self, order_id: int, account_id: str = "", account_type: str = ""
+    ):
         """按委托编号查询单笔委托 → _trader.query_stock_order()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         return self._trader.query_stock_order(account, order_id)
 
-    def query_single_trade(self, trade_id: int, account_id: str = ""):
+    def query_single_trade(
+        self, trade_id: int, account_id: str = "", account_type: str = ""
+    ):
         """按成交编号查询单笔成交（遍历 query_stock_trades 过滤）。"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         trades = self._trader.query_stock_trades(account)
         if trades:
             for t in trades:
@@ -171,9 +242,11 @@ class XtTraderManager:
                     return t
         return None
 
-    def query_single_position(self, stock_code: str, account_id: str = ""):
+    def query_single_position(
+        self, stock_code: str, account_id: str = "", account_type: str = ""
+    ):
         """查询单只股票持仓（遍历 query_stock_positions 过滤）。"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type)
         positions = self._trader.query_stock_positions(account)
         if positions:
             for p in positions:
@@ -196,34 +269,56 @@ class XtTraderManager:
             price_type, price, strategy_name, order_remark,
         )
 
-    def query_credit_positions(self, account_id: str = ""):
+    def query_credit_positions(self, account_id: str = "", account_type: str = ""):
         """查询信用账户持仓 → _trader.query_stock_positions()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_stock_positions(account)
 
-    def query_credit_detail(self, account_id: str = ""):
+    def query_credit_detail(self, account_id: str = "", account_type: str = ""):
         """查询信用账户资产详情 → _trader.query_credit_detail()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_credit_detail(account)
 
-    def query_stk_compacts(self, account_id: str = ""):
+    def query_stk_compacts(self, account_id: str = "", account_type: str = ""):
         """查询信用负债合约 → _trader.query_stk_compacts()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_stk_compacts(account)
 
-    def query_credit_slo_code(self, account_id: str = ""):
+    def query_credit_position_breakdown(self, account_id: str = "", account_type: str = ""):
+        """信用持仓拆分：总持仓 = 融资买入 + 担保品（positions + stk_compacts）。"""
+        from ...credit_positions import build_credit_position_breakdown
+        from ..helpers import _numpy_to_python
+
+        positions = _numpy_to_python(
+            self.query_credit_positions(account_id=account_id, account_type=account_type)
+        )
+        compacts = _numpy_to_python(
+            self.query_stk_compacts(account_id=account_id, account_type=account_type)
+        )
+        if not isinstance(positions, list):
+            positions = []
+        if not isinstance(compacts, list):
+            compacts = []
+        breakdown = build_credit_position_breakdown(compacts, positions)
+        return {
+            "positions": positions,
+            "compacts": compacts,
+            "breakdown": breakdown,
+        }
+
+    def query_credit_slo_code(self, account_id: str = "", account_type: str = ""):
         """查询融券标的券列表 → _trader.query_credit_slo_code()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_credit_slo_code(account)
 
-    def query_credit_subjects(self, account_id: str = ""):
+    def query_credit_subjects(self, account_id: str = "", account_type: str = ""):
         """查询信用标的券列表 → _trader.query_credit_subjects()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_credit_subjects(account)
 
-    def query_credit_assure(self, account_id: str = ""):
+    def query_credit_assure(self, account_id: str = "", account_type: str = ""):
         """查询信用担保品信息 → _trader.query_credit_assure()"""
-        account = self._resolve_account(account_id)
+        account = self._resolve_account(account_id, account_type or "CREDIT")
         return self._trader.query_credit_assure(account)
 
     # ------------------------------------------------------------------

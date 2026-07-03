@@ -106,7 +106,9 @@ class TradingMixin:
             "account_id": account_id,
         })
 
-    def query_orders(self, account_id: str = "", cancelable_only: bool = False) -> dict:
+    def query_orders(
+        self, account_id: str = "", cancelable_only: bool = False, account_type: str = ""
+    ) -> dict:
         """查询当日委托列表。
 
         Args:
@@ -119,9 +121,10 @@ class TradingMixin:
         return self._get("/api/trading/orders", {
             "account_id": account_id,
             "cancelable_only": cancelable_only,
+            **({"account_type": account_type} if account_type else {}),
         })
 
-    def query_positions(self, account_id: str = "") -> dict:
+    def query_positions(self, account_id: str = "", account_type: str = "") -> dict:
         """查询当前持仓列表。
 
         Args:
@@ -130,9 +133,12 @@ class TradingMixin:
         Returns:
             持仓列表数据
         """
-        return self._get("/api/trading/positions", {"account_id": account_id})
+        return self._get(
+            "/api/trading/positions",
+            {"account_id": account_id, **({"account_type": account_type} if account_type else {})},
+        )
 
-    def query_asset(self, account_id: str = "") -> dict:
+    def query_asset(self, account_id: str = "", account_type: str = "") -> dict:
         """查询账户资产信息。
 
         Args:
@@ -141,9 +147,12 @@ class TradingMixin:
         Returns:
             账户资产信息字典
         """
-        return self._get("/api/trading/asset", {"account_id": account_id})
+        return self._get(
+            "/api/trading/asset",
+            {"account_id": account_id, **({"account_type": account_type} if account_type else {})},
+        )
 
-    def query_trades(self, account_id: str = "") -> dict:
+    def query_trades(self, account_id: str = "", account_type: str = "") -> dict:
         """查询当日成交记录。
 
         Args:
@@ -152,7 +161,10 @@ class TradingMixin:
         Returns:
             成交记录列表数据
         """
-        return self._get("/api/trading/trades", {"account_id": account_id})
+        return self._get(
+            "/api/trading/trades",
+            {"account_id": account_id, **({"account_type": account_type} if account_type else {})},
+        )
 
     def query_order_detail(self, order_id: int, account_id: str = "") -> dict:
         """查询指定委托的详细信息。

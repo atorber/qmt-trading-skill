@@ -25,6 +25,7 @@ from common import (  # noqa: E402
     call_api,
     load_env_files,
     make_client,
+    resolve_account_type_for_id,
     unwrap_data,
 )
 from execution_review_eval import (  # noqa: E402
@@ -70,8 +71,14 @@ def _broker_daily_pnl(position: dict | None) -> float | None:
     return None
 
 
-def _fetch_pnl_breakdowns(client, account_id: str, trades: list[dict]):
-    positions = unwrap_data(call_api(client.query_positions, account_id=account_id))
+def _fetch_pnl_breakdowns(client, account_id: str, trades: list[dict], account_type: str = ""):
+    positions = unwrap_data(
+        call_api(
+            client.query_positions,
+            account_id=account_id,
+            account_type=account_type,
+        )
+    )
     if not isinstance(positions, list):
         positions = []
 
@@ -144,18 +151,40 @@ def main() -> int:
     args = parser.parse_args()
 
     client, account_id = make_client(args)
+    account_type = resolve_account_type_for_id(
+        account_id,
+        getattr(args, "account_type", None) or "",
+    )
 
     health = call_api(client.health_check)
     acct = unwrap_data(call_api(client.get_account_status, account_id=account_id))
-    asset = unwrap_data(call_api(client.query_asset, account_id=account_id))
+    asset = unwrap_data(
+        call_api(
+            client.query_asset,
+            account_id=account_id,
+            account_type=account_type,
+        )
+    )
     if not isinstance(asset, dict):
         asset = {}
 
     orders = as_list(
-        unwrap_data(call_api(client.query_orders, account_id=account_id))
+        unwrap_data(
+            call_api(
+                client.query_orders,
+                account_id=account_id,
+                account_type=account_type,
+            )
+        )
     )
     trades = as_list(
-        unwrap_data(call_api(client.query_trades, account_id=account_id))
+        unwrap_data(
+            call_api(
+                client.query_trades,
+                account_id=account_id,
+                account_type=account_type,
+            )
+        )
     )
 
     filled = sum(
@@ -173,7 +202,9 @@ def main() -> int:
     op_eval = None
     breakdowns = []
     if not args.no_eval:
-        breakdowns, tick_map = _fetch_pnl_breakdowns(client, account_id, trades)
+        breakdowns, tick_map = _fetch_pnl_breakdowns(
+            client, account_id, trades, account_type=account_type
+        )
         eval_codes = [b.stock_code for b in breakdowns if b.stock_code]
         cum3: dict[str, float | None] = {}
         index_avg: float | None = None
@@ -269,6 +300,8 @@ def main() -> int:
     print(f"account_status: {acct}")
     if account_id:
         print(f"account_id: {account_id}")
+    if account_type:
+        print(f"account_type: {account_type}")
     print(
         f"统计: 委托 {len(orders)} 笔 | 有成交 {filled} | 已撤 {cancelled} | "
         f"成交记录 {len(trades)} 条"

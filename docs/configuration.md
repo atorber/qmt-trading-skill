@@ -14,7 +14,9 @@
 | `QMT_BRIDGE_REQUIRE_AUTH_FOR_DATA` | — | `false` | 数据端点是否也要求认证 |
 | `QMT_BRIDGE_TRADING_ENABLED` | `--trading` | `false` | 是否启用交易模块 |
 | `QMT_BRIDGE_MINI_QMT_PATH` | `--mini-qmt-path` | _(空)_ | miniQMT 安装路径（交易模块需要） |
-| `QMT_BRIDGE_TRADING_ACCOUNT_ID` | `--account-id` | _(空)_ | 交易账户 ID |
+| `QMT_BRIDGE_STOCK_ACCOUNT_ID` | `--stock-account-id` | _(空)_ | 普通证券账户 ID |
+| `QMT_BRIDGE_CREDIT_ACCOUNT_ID` | `--credit-account-id` | _(空)_ | 信用两融账户 ID |
+| `QMT_BRIDGE_DEFAULT_ACCOUNT` | `--default-account` | `stock` | 默认 API/订阅账户：`stock` \| `credit` |
 
 ### Agent 脚本
 
@@ -55,8 +57,14 @@ QMT_BRIDGE_WORKERS=1
 # miniQMT 安装路径（交易模块需要）
 # QMT_BRIDGE_MINI_QMT_PATH=C:\国金QMT交易端\userdata_mini
 
-# 交易账户 ID
-# QMT_BRIDGE_TRADING_ACCOUNT_ID=12345678
+# 普通证券账户
+# QMT_BRIDGE_STOCK_ACCOUNT_ID=755100210127
+
+# 信用两融账户
+# QMT_BRIDGE_CREDIT_ACCOUNT_ID=755860001037
+
+# 默认 API 账户：stock | credit
+# QMT_BRIDGE_DEFAULT_ACCOUNT=stock
 ```
 
 ## 认证机制

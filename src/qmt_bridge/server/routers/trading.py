@@ -73,41 +73,51 @@ def cancel_order_by_sysid_async(req: CancelBySysidRequest, manager=Depends(get_t
 @router.get("/orders")
 def query_orders(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("", description="账户类型：STOCK 或 CREDIT"),
     cancelable_only: bool = Query(False, description="仅返回可撤委托"),
     manager=Depends(get_trader_manager),
 ):
     """查询当日委托列表 → manager.query_orders()"""
-    result = manager.query_orders(account_id=account_id, cancelable_only=cancelable_only)
+    result = manager.query_orders(
+        account_id=account_id,
+        cancelable_only=cancelable_only,
+        account_type=account_type,
+    )
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/positions")
 def query_positions(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("", description="账户类型：STOCK 或 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
     """查询当前持仓列表 → manager.query_positions()"""
-    result = manager.query_positions(account_id=account_id)
+    result = manager.query_positions(
+        account_id=account_id, account_type=account_type
+    )
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/asset")
 def query_asset(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("", description="账户类型：STOCK 或 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
     """查询账户资产信息 → manager.query_asset()"""
-    result = manager.query_asset(account_id=account_id)
+    result = manager.query_asset(account_id=account_id, account_type=account_type)
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/trades")
 def query_trades(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("", description="账户类型：STOCK 或 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
     """查询当日成交记录 → manager.query_trades()"""
-    result = manager.query_trades(account_id=account_id)
+    result = manager.query_trades(account_id=account_id, account_type=account_type)
     return {"data": _numpy_to_python(result)}
 
 

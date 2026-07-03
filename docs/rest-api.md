@@ -233,10 +233,11 @@
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/api/credit/order` | 信用交易下单 |
-| GET | `/api/credit/positions` | 信用持仓 |
-| GET | `/api/credit/detail` | 信用资产详情 |
-| GET | `/api/credit/stk_compacts` | 负债合约查询 |
-| GET | `/api/credit/slo_code` | 可融券标的 |
+| GET | `/api/credit/asset` | 信用资产详情（`query_credit_detail`，别名 `/detail`） |
+| GET | `/api/credit/positions` | 信用持仓（`query_stock_positions` + CREDIT） |
+| GET | `/api/credit/positions/breakdown` | 信用持仓拆分（总=融资+担保品） |
+| GET | `/api/credit/debt` | 负债合约（`query_stk_compacts`，别名 `/stk_compacts`） |
+| GET | `/api/credit/slo_stocks` | 可融券标的（别名 `/slo_code`） |
 | GET | `/api/credit/subjects` | 标的证券 |
 | GET | `/api/credit/assure` | 担保品信息 |
 

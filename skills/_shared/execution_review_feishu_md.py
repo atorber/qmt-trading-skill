@@ -13,9 +13,9 @@ def _fmt_pnl(v: float) -> str:
     sign = "+" if v >= 0 else ""
     return f"{sign}{v:,.0f} 元"
 from feishu_doc import DOC_TYPES, format_title
-from orders_util import slippage_bps
+from orders_util import build_stock_trade_summary, slippage_bps
 from stock_names import label_stock
-from trading_fmt import format_order_time, order_side, order_status_label, pick
+from trading_fmt import format_order_time, order_status_label, order_type_label, pick
 
 
 def _orders_table_md(orders: list[dict], name_map: dict[str, str]) -> list[str]:
@@ -28,7 +28,7 @@ def _orders_table_md(orders: list[dict], name_map: dict[str, str]) -> list[str]:
     for o in sorted(orders, key=lambda x: pick(x, "order_time", "m_nOrderTime", default=0)):
         code = pick(o, "stock_code", "m_strStockCode", default="?")
         sym = label_stock(code, name_map)
-        side = order_side(pick(o, "order_type", "m_nOrderType"))
+        side = order_type_label(pick(o, "order_type", "m_nOrderType"))
         vol = int(pick(o, "order_volume", "m_nOrderVolume", default=0) or 0)
         traded = int(pick(o, "traded_volume", "m_nTradedVolume", default=0) or 0)
         price = float(pick(o, "price", "m_dPrice", default=0) or 0)
@@ -70,23 +70,7 @@ def _stock_summary_md(
     trades: list[dict],
     name_map: dict[str, str],
 ) -> list[str]:
-    summary: dict[str, dict[str, int]] = {}
-    for o in orders:
-        code = pick(o, "stock_code", "m_strStockCode", default="")
-        if not code:
-            continue
-        side = order_side(pick(o, "order_type", "m_nOrderType"))
-        traded = int(pick(o, "traded_volume", "m_nTradedVolume", default=0) or 0)
-        if code not in summary:
-            summary[code] = {"买入": 0, "卖出": 0}
-        if traded > 0:
-            summary[code][side] = summary[code].get(side, 0) + traded
-    if trades:
-        for t in trades:
-            code = pick(t, "stock_code", "m_strStockCode", default="")
-            if not code or code in summary:
-                continue
-            summary[code] = {"买入": 0, "卖出": 0}
+    summary = build_stock_trade_summary(orders, trades)
     lines = ["## 四、按标的成交汇总", ""]
     if not summary:
         lines.append("（无）")

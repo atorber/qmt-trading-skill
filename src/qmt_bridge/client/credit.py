@@ -55,40 +55,69 @@ class CreditMixin:
             "account_id": account_id,
         })
 
-    def query_credit_positions(self, account_id: str = "") -> dict:
+    def query_credit_positions(self, account_id: str = "", account_type: str = "") -> dict:
         """查询信用账户持仓。
 
         Args:
             account_id: 交易账户 ID
+            account_type: 账户类型，默认 CREDIT
 
         Returns:
             信用账户持仓列表
         """
-        return self._get("/api/credit/positions", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/positions", params)
 
-    def query_credit_detail(self, account_id: str = "") -> dict:
+    def query_credit_position_breakdown(
+        self, account_id: str = "", account_type: str = ""
+    ) -> dict:
+        """查询信用账户持仓拆分（总持仓 = 融资买入 + 担保品）。
+
+        Args:
+            account_id: 交易账户 ID
+            account_type: 账户类型，默认 CREDIT
+
+        Returns:
+            positions、compacts、breakdown 汇总
+        """
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/positions/breakdown", params)
+
+    def query_credit_detail(self, account_id: str = "", account_type: str = "") -> dict:
         """查询信用账户资产详情。
 
         Args:
             account_id: 交易账户 ID
+            account_type: 账户类型，默认 CREDIT
 
         Returns:
             信用账户资产详情
         """
-        return self._get("/api/credit/asset", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/asset", params)
 
-    def query_stk_compacts(self, account_id: str = "") -> dict:
+    def query_stk_compacts(self, account_id: str = "", account_type: str = "") -> dict:
         """查询信用负债合约。
 
         Args:
             account_id: 交易账户 ID
+            account_type: 账户类型，默认 CREDIT
 
         Returns:
             负债合约列表
         """
-        return self._get("/api/credit/debt", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/debt", params)
 
-    def query_credit_slo_code(self, account_id: str = "") -> dict:
+    def query_credit_slo_code(self, account_id: str = "", account_type: str = "") -> dict:
         """查询融券标的列表。
 
         Args:
@@ -97,9 +126,12 @@ class CreditMixin:
         Returns:
             可融券标的列表
         """
-        return self._get("/api/credit/slo_stocks", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/slo_stocks", params)
 
-    def query_credit_subjects(self, account_id: str = "") -> dict:
+    def query_credit_subjects(self, account_id: str = "", account_type: str = "") -> dict:
         """查询两融标的证券列表。
 
         Args:
@@ -108,9 +140,12 @@ class CreditMixin:
         Returns:
             标的证券列表
         """
-        return self._get("/api/credit/subjects", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/subjects", params)
 
-    def query_credit_assure(self, account_id: str = "") -> dict:
+    def query_credit_assure(self, account_id: str = "", account_type: str = "") -> dict:
         """查询担保品信息。
 
         Args:
@@ -119,4 +154,7 @@ class CreditMixin:
         Returns:
             担保品信息列表
         """
-        return self._get("/api/credit/assure", {"account_id": account_id})
+        params: dict = {"account_id": account_id}
+        if account_type:
+            params["account_type"] = account_type
+        return self._get("/api/credit/assure", params)

@@ -10,7 +10,7 @@
 2. 复制配置：`cp .env.example .env`
 3. 启用交易相关 Skill 时配置：
    - `QMT_BRIDGE_API_KEY`
-   - `QMT_BRIDGE_TRADING_ACCOUNT_ID`（可选）
+   - `QMT_BRIDGE_STOCK_ACCOUNT_ID` / `QMT_BRIDGE_CREDIT_ACCOUNT_ID`（可选）
 4. Bridge 已启动且 QMT 已登录（`qmt-server --trading ...`）
 
 !!! tip "客户端连接地址"
