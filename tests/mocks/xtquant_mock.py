@@ -158,6 +158,16 @@ def install_xtquant_mock() -> None:
     xtquant.__version__ = "mock"
     xtquant.xtdata = xtdata
 
+    xtbson = types.ModuleType("xtquant.xtbson")
+
+    class _BSON:
+        @staticmethod
+        def encode(_obj):
+            return b""
+
+    xtbson.BSON = _BSON
+    xtquant.xtbson = xtbson
+
     xttype = types.ModuleType("xtquant.xttype")
 
     class StockAccount:
@@ -326,6 +336,7 @@ def install_xtquant_mock() -> None:
 
     sys.modules["xtquant"] = xtquant
     sys.modules["xtquant.xtdata"] = xtdata
+    sys.modules["xtquant.xtbson"] = xtbson
     sys.modules["xtquant.xttype"] = xttype
     sys.modules["xtquant.xttrader"] = xttrader
 
