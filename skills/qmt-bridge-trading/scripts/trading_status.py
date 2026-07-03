@@ -17,12 +17,13 @@ _SHARED = Path(__file__).resolve().parents[2] / "_shared"
 if str(_SHARED) not in sys.path:
     sys.path.insert(0, str(_SHARED))
 
-from _common import (
+from common import (  # noqa: E402
     add_client_args,
     call_api,
     fmt_num,
     load_env_files,
     make_client,
+    resolve_account_type_for_id,
     unwrap_data,
 )
 from stock_names import fetch_stock_names, label_stock  # noqa: E402
@@ -38,6 +39,10 @@ def main() -> int:
     args = parser.parse_args()
 
     client, account_id = make_client(args)
+    account_type = resolve_account_type_for_id(
+        account_id,
+        getattr(args, "account_type", None) or "",
+    )
 
     health = call_api(client.health_check)
     acct_status = call_api(
@@ -51,6 +56,7 @@ def main() -> int:
             call_api(
                 client.query_positions,
                 account_id=account_id,
+                account_type=account_type,
             )
         )
         if not isinstance(positions, list):
@@ -69,6 +75,7 @@ def main() -> int:
             call_api(
                 client.query_asset,
                 account_id=account_id,
+                account_type=account_type,
             )
         )
         if isinstance(raw_asset, dict):
@@ -94,6 +101,8 @@ def main() -> int:
     print(f"account_status: {status_data}")
     if account_id:
         print(f"account_id: {account_id}")
+    if account_type:
+        print(f"account_type: {account_type}")
 
     if not args.no_asset and asset:
         print("--- 资产 ---")

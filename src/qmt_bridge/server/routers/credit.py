@@ -10,7 +10,7 @@
 - query_credit_assure — 查询担保品
 """
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from ..deps import get_trader_manager
 from ..helpers import _numpy_to_python, ok_response
@@ -39,34 +39,64 @@ def credit_order(req: CreditOrderRequest, manager=Depends(get_trader_manager)):
 @router.get("/positions")
 def query_credit_positions(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("CREDIT", description="账户类型，默认 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
     """查询两融持仓列表 → manager.query_credit_positions()"""
-    result = manager.query_credit_positions(account_id=account_id)
+    result = manager.query_credit_positions(
+        account_id=account_id, account_type=account_type
+    )
+    return {"data": _numpy_to_python(result)}
+
+
+@router.get("/positions/breakdown")
+def query_credit_position_breakdown(
+    account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("CREDIT", description="账户类型，默认 CREDIT"),
+    manager=Depends(get_trader_manager),
+):
+    """信用持仓拆分（总=融资+担保品）→ positions + stk_compacts 合并"""
+    result = manager.query_credit_position_breakdown(
+        account_id=account_id, account_type=account_type
+    )
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/asset")
+@router.get("/detail")
 def query_credit_detail(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("CREDIT", description="账户类型，默认 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
-    """查询信用账户资产详情 → manager.query_credit_detail()"""
-    result = manager.query_credit_detail(account_id=account_id)
+    """查询信用账户资产详情 → xt_trader.query_credit_detail(StockAccount(id,'CREDIT'))"""
+    result = manager.query_credit_detail(
+        account_id=account_id, account_type=account_type
+    )
+    if result is None:
+        raise HTTPException(
+            status_code=503,
+            detail="query_credit_detail failed (xtquant returned None)",
+        )
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/debt")
+@router.get("/stk_compacts")
 def query_stk_compacts(
     account_id: str = Query("", description="交易账户 ID"),
+    account_type: str = Query("CREDIT", description="账户类型，默认 CREDIT"),
     manager=Depends(get_trader_manager),
 ):
     """查询信用负债合约 → manager.query_stk_compacts()"""
-    result = manager.query_stk_compacts(account_id=account_id)
+    result = manager.query_stk_compacts(
+        account_id=account_id, account_type=account_type
+    )
     return {"data": _numpy_to_python(result)}
 
 
 @router.get("/slo_stocks")
+@router.get("/slo_code")
 def query_credit_slo_code(
     account_id: str = Query("", description="交易账户 ID"),
     manager=Depends(get_trader_manager),

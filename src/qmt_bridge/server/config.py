@@ -56,7 +56,7 @@ class Settings:
     配置项分为以下几组：
     - 服务器基础配置（host/port/log_level/workers）
     - 安全认证配置（api_key/require_auth_for_data）
-    - 交易模块配置（trading_enabled/mini_qmt_path/trading_account_id）
+    - 交易模块配置（trading_enabled/mini_qmt_path/stock_account_id/credit_account_id）
     - 通知模块配置（notify_enabled/notify_backends 等）
     - 飞书 Webhook 配置
     - 通用 Webhook 配置
@@ -75,7 +75,9 @@ class Settings:
     # ---- 交易模块配置（底层使用 xtquant.xttrader）----
     trading_enabled: bool = False   # 是否启用交易模块
     mini_qmt_path: str = ""        # miniQMT 客户端安装路径
-    trading_account_id: str = ""   # 交易资金账号 ID
+    stock_account_id: str = ""     # 普通证券账户 ID
+    credit_account_id: str = ""    # 信用两融账户 ID
+    default_account: str = "stock"  # 默认户：stock | credit
 
     # ---- 通知模块配置 ----
     notify_enabled: bool = False   # 是否启用通知推送
@@ -134,9 +136,9 @@ class Settings:
             ).lower()
             in ("1", "true", "yes"),
             mini_qmt_path=os.environ.get("QMT_BRIDGE_MINI_QMT_PATH", ""),
-            trading_account_id=os.environ.get(
-                "QMT_BRIDGE_TRADING_ACCOUNT_ID", ""
-            ),
+            stock_account_id=os.environ.get("QMT_BRIDGE_STOCK_ACCOUNT_ID", ""),
+            credit_account_id=os.environ.get("QMT_BRIDGE_CREDIT_ACCOUNT_ID", ""),
+            default_account=os.environ.get("QMT_BRIDGE_DEFAULT_ACCOUNT", "stock"),
             # 通知相关配置
             notify_enabled=os.environ.get(
                 "QMT_BRIDGE_NOTIFY_ENABLED", ""
@@ -190,6 +192,25 @@ class Settings:
             kline_download_timeout_1d_sec=int(
                 os.environ.get("QMT_BRIDGE_KLINE_DOWNLOAD_TIMEOUT_1D_SEC", "30")
             ),
+        )
+
+    def resolved_account_type_map(self) -> dict[str, str]:
+        """合成 account_id → 类型映射（普通户 + 信用户）。"""
+        from .trading.accounts import build_account_type_map
+
+        return build_account_type_map(
+            self.stock_account_id,
+            self.credit_account_id,
+        )
+
+    def resolved_trading_account(self) -> tuple[str, str]:
+        """解析默认订阅/API 账户 (account_id, account_type)。"""
+        from .trading.accounts import resolve_default_trading_account
+
+        return resolve_default_trading_account(
+            stock_account_id=self.stock_account_id,
+            credit_account_id=self.credit_account_id,
+            default_account=self.default_account,
         )
 
 

@@ -31,7 +31,7 @@ description: >-
 1. **服务可用**：`GET /api/meta/health`（无需 Key）
 2. **交易已启用**：启动参数含 `--trading` 或 `QMT_BRIDGE_TRADING_ENABLED=true`
 3. **认证**：所有 `/api/trading/*` 请求头携带 `X-API-Key: <密钥>`（与服务端 `QMT_BRIDGE_API_KEY` 一致）
-4. **账户**：多账户时传 `account_id`；单账户可留空（使用服务端默认 `QMT_BRIDGE_TRADING_ACCOUNT_ID`）
+4. **账户**：多账户时传 `account_id`；留空则使用服务端默认户（`QMT_BRIDGE_DEFAULT_ACCOUNT` 指定 stock/credit）
 5. **连接**：下单前建议 `GET /api/trading/account_status`，确认交易通道已连接
 
 ## 连接信息
@@ -43,7 +43,9 @@ description: >-
 | `QMT_BRIDGE_HOST` / 用户提供的 IP | 服务端地址 |
 | `QMT_BRIDGE_PORT` | 端口，默认 `8000` |
 | `QMT_BRIDGE_API_KEY` | 交易认证密钥 |
-| `QMT_BRIDGE_TRADING_ACCOUNT_ID` | 默认资金账号（可选） |
+| `QMT_BRIDGE_STOCK_ACCOUNT_ID` | 普通证券账户（可选） |
+| `QMT_BRIDGE_CREDIT_ACCOUNT_ID` | 信用两融账户（可选） |
+| `QMT_BRIDGE_DEFAULT_ACCOUNT` | 默认户 `stock` / `credit`（默认 stock） |
 
 **Python 客户端**（推荐，仓库已内置）：
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from trading_fmt import order_side, pick
+from trading_fmt import is_buy_order_type, is_sell_order_type, pick
 
 
 @dataclass
@@ -58,7 +58,7 @@ def summarize_trades_by_code(trades: list[dict]) -> dict[str, TradeDaySummary]:
         code = str(pick(t, "stock_code", "m_strStockCode", default="") or "").strip()
         if not code:
             continue
-        side = order_side(pick(t, "order_type", "m_nOrderType"))
+        order_type = pick(t, "order_type", "m_nOrderType")
         vol = int(pick(t, "traded_volume", "m_nTradedVolume", "trade_volume", default=0) or 0)
         if vol <= 0:
             continue
@@ -69,10 +69,10 @@ def summarize_trades_by_code(trades: list[dict]) -> dict[str, TradeDaySummary]:
         amt = float(amount) if amount is not None else price * vol
 
         row = out.setdefault(code, TradeDaySummary())
-        if side == "买入":
+        if is_buy_order_type(order_type):
             row.buy_volume += vol
             row.buy_amount += amt
-        elif side == "卖出":
+        elif is_sell_order_type(order_type):
             row.sell_volume += vol
             row.sell_amount += amt
     return out

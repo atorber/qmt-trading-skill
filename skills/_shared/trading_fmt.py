@@ -5,10 +5,27 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-ORDER_TYPE_LABEL = {
+# 普通 + 信用委托类型（对齐 xtquant.xtconstant）
+ORDER_TYPE_LABEL: dict[int, str] = {
     23: "买入",
     24: "卖出",
+    27: "融资买入",
+    28: "融券卖出",
+    29: "买券还券",
+    30: "直接还券",
+    31: "卖券还款",
+    32: "直接还款",
+    40: "专项融资买入",
+    41: "专项融券卖出",
+    42: "专项买券还券",
+    43: "专项直接还券",
+    44: "专项卖券还款",
+    45: "专项直接还款",
 }
+
+# 计入当日买入/卖出成交量与金额的委托类型
+BUY_ORDER_TYPES: frozenset[int] = frozenset({23, 27, 29, 40, 42})
+SELL_ORDER_TYPES: frozenset[int] = frozenset({24, 28, 31, 41, 44})
 
 # QMT / xtquant 常见委托状态（未知码原样显示）
 ORDER_STATUS_LABEL = {
@@ -26,11 +43,40 @@ ORDER_STATUS_LABEL = {
 }
 
 
-def order_side(order_type: Any) -> str:
+def _to_order_type_int(order_type: Any) -> int | None:
     try:
-        return ORDER_TYPE_LABEL.get(int(order_type), f"类型{order_type}")
+        return int(order_type)
     except (TypeError, ValueError):
+        return None
+
+
+def is_buy_order_type(order_type: Any) -> bool:
+    """是否为买入类委托（含融资买入、买券还券等）。"""
+    code = _to_order_type_int(order_type)
+    return code in BUY_ORDER_TYPES if code is not None else False
+
+
+def is_sell_order_type(order_type: Any) -> bool:
+    """是否为卖出类委托（含融券卖出、卖券还款等）。"""
+    code = _to_order_type_int(order_type)
+    return code in SELL_ORDER_TYPES if code is not None else False
+
+
+def order_type_label(order_type: Any) -> str:
+    """委托类型展示名（如「融资买入」）。"""
+    code = _to_order_type_int(order_type)
+    if code is None:
         return "?"
+    return ORDER_TYPE_LABEL.get(code, f"类型{code}")
+
+
+def order_side(order_type: Any) -> str:
+    """买卖方向归类：买入 / 卖出 / 类型名（还款类等）。"""
+    if is_buy_order_type(order_type):
+        return "买入"
+    if is_sell_order_type(order_type):
+        return "卖出"
+    return order_type_label(order_type)
 
 
 def order_status_label(status: Any) -> str:

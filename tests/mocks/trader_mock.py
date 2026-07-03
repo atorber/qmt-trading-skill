@@ -44,9 +44,17 @@ def _order(account_id: str, order_id: int = 10001) -> SimpleNamespace:
 class TraderManagerStub:
     """与 XtTraderManager 同接口的轻量桩。"""
 
-    def __init__(self, mini_qmt_path: str = "", account_id: str = "12345678"):
+    def __init__(
+        self,
+        mini_qmt_path: str = "",
+        account_id: str = "12345678",
+        account_type: str = "",
+        account_type_map: dict[str, str] | None = None,
+    ):
         self.mini_qmt_path = mini_qmt_path
         self.account_id = account_id
+        self.account_type = account_type
+        self.account_type_map = account_type_map or {}
         self._trader = MagicMock()
         self._account = SimpleNamespace(account_id=account_id)
         self._callback = MagicMock()
@@ -89,16 +97,21 @@ class TraderManagerStub:
     ) -> int:
         return 1
 
-    def query_orders(self, account_id: str = "", cancelable_only: bool = False):
+    def query_orders(
+        self,
+        account_id: str = "",
+        cancelable_only: bool = False,
+        account_type: str = "",
+    ):
         return [_order(account_id or self.account_id)]
 
-    def query_positions(self, account_id: str = ""):
+    def query_positions(self, account_id: str = "", account_type: str = ""):
         return [_position(account_id or self.account_id)]
 
-    def query_asset(self, account_id: str = ""):
+    def query_asset(self, account_id: str = "", account_type: str = ""):
         return _asset(account_id or self.account_id)
 
-    def query_trades(self, account_id: str = ""):
+    def query_trades(self, account_id: str = "", account_type: str = ""):
         return []
 
     def query_order_detail(self, order_id: int = 0, account_id: str = ""):
@@ -118,14 +131,19 @@ class TraderManagerStub:
     def credit_order(self, *args, **kwargs) -> int:
         return 10002
 
-    def query_credit_positions(self, account_id: str = ""):
+    def query_credit_positions(self, account_id: str = "", account_type: str = ""):
         return []
 
-    def query_credit_detail(self, account_id: str = ""):
+    def query_credit_detail(self, account_id: str = "", account_type: str = ""):
         return _asset(account_id or self.account_id)
 
-    def query_stk_compacts(self, account_id: str = ""):
+    def query_stk_compacts(self, account_id: str = "", account_type: str = ""):
         return []
+
+    def query_credit_position_breakdown(
+        self, account_id: str = "", account_type: str = ""
+    ):
+        return {"positions": [], "financed": [], "collateral": []}
 
     def query_credit_slo_code(self, account_id: str = ""):
         return []

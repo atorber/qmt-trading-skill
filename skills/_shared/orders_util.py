@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from trading_fmt import format_order_time, order_side, order_status_label, pick
+from trading_fmt import format_order_time, is_buy_order_type, is_sell_order_type, order_side, order_status_label, order_type_label, pick
 
 
 def as_list(resp: Any) -> list[dict]:
@@ -40,7 +40,7 @@ def print_orders_table(
     for o in sorted(orders, key=lambda x: pick(x, "order_time", "m_nOrderTime", default=0)):
         code = pick(o, "stock_code", "m_strStockCode", default="?")
         sym = label_stock(code, name_map)
-        side = order_side(pick(o, "order_type", "m_nOrderType"))
+        side = order_type_label(pick(o, "order_type", "m_nOrderType"))
         vol = int(pick(o, "order_volume", "m_nOrderVolume", default=0) or 0)
         traded = int(pick(o, "traded_volume", "m_nTradedVolume", default=0) or 0)
         price = float(pick(o, "price", "m_dPrice", default=0) or 0)
@@ -49,8 +49,10 @@ def print_orders_table(
         t = format_order_time(pick(o, "order_time", "m_nOrderTime"))
         sysid = pick(o, "order_sysid", "m_strOrderSysID", default="")
         slip = ""
-        if traded > 0 and price > 0 and tprice > 0:
-            bps = slippage_bps(price, tprice, side)
+        order_type = pick(o, "order_type", "m_nOrderType")
+        slip_side = order_side(order_type)
+        if traded > 0 and price > 0 and tprice > 0 and slip_side in ("买入", "卖出"):
+            bps = slippage_bps(price, tprice, slip_side)
             if bps is not None:
                 slip = f"  slip={bps:+.1f}bp"
         print(
@@ -59,31 +61,44 @@ def print_orders_table(
         )
 
 
-def summarize_by_stock(
+def build_stock_trade_summary(
     orders: list[dict],
-    trades: list[dict],
-    *,
-    name_map: dict[str, str] | None = None,
-) -> None:
-    from stock_names import label_stock
-    """按标的汇总当日买卖量。"""
+    trades: list[dict] | None = None,
+) -> dict[str, dict[str, int]]:
+    """按标的汇总当日买入/卖出成交量（买卖方向归类，含融资买入/卖券还款等）。"""
     summary: dict[str, dict[str, int]] = {}
     for o in orders:
         code = pick(o, "stock_code", "m_strStockCode", default="")
         if not code:
             continue
-        side = order_side(pick(o, "order_type", "m_nOrderType"))
+        order_type = pick(o, "order_type", "m_nOrderType")
         traded = int(pick(o, "traded_volume", "m_nTradedVolume", default=0) or 0)
         if code not in summary:
             summary[code] = {"买入": 0, "卖出": 0}
         if traded > 0:
-            summary[code][side] = summary[code].get(side, 0) + traded
+            if is_buy_order_type(order_type):
+                summary[code]["买入"] += traded
+            elif is_sell_order_type(order_type):
+                summary[code]["卖出"] += traded
     if trades:
         for t in trades:
             code = pick(t, "stock_code", "m_strStockCode", default="")
             if not code or code in summary:
                 continue
             summary[code] = {"买入": 0, "卖出": 0}
+    return summary
+
+
+def summarize_by_stock(
+    orders: list[dict],
+    trades: list[dict],
+    *,
+    name_map: dict[str, str] | None = None,
+) -> None:
+    """按标的汇总当日买卖量。"""
+    from stock_names import label_stock
+
+    summary = build_stock_trade_summary(orders, trades)
 
     if not summary:
         return
