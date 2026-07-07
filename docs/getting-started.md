@@ -81,6 +81,36 @@ scripts\start.bat
 scripts\stop.bat
 ```
 
+### PM2 守护（崩溃自动拉起，推荐长期运行）
+
+需先安装 [PM2](https://pm2.keymetrics.io/)：`npm install -g pm2`，并完成 `pip install -e ".[server,...]"` 与 `.env` 配置。
+
+```bat
+REM 可选：指定 venv Python
+set PM2_PYTHON=C:\path\to\venv\Scripts\python.exe
+
+REM 仅启动 API（读 .env：端口、TRADING_ENABLED、DEFAULT_ACCOUNT 等）
+scripts\pm2-start.bat
+
+REM 或手动
+pm2 start ecosystem.config.cjs --only qmt-server
+pm2 logs qmt-server
+pm2 restart qmt-server
+scripts\pm2-stop.bat
+```
+
+信用户为默认账户时，在 `.env` 设置 `QMT_BRIDGE_DEFAULT_ACCOUNT=credit` 与 `QMT_BRIDGE_TRADING_ENABLED=true` 即可，无需改 `ecosystem.config.cjs`。
+
+定时下载调度器（独立进程，按需）：
+
+```bat
+pm2 start ecosystem.config.cjs --only qmt-scheduler
+```
+
+开机自启（管理员 PowerShell）：`pm2 startup` → `pm2 save`。
+
+日志文件：`logs/pm2/`。F5 调试仍用 `.vscode/launch.json`；PM2 用于无断点的后台守护。
+
 ## 5. 验证
 
 在你的 Mac/Linux 浏览器中访问：
