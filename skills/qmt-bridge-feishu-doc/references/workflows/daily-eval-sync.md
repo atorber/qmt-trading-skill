@@ -4,15 +4,17 @@
 
 ## 固定流程（必读）
 
-执行「今日复盘 / 同步飞书」时 **必须** 按下列顺序，**禁止** Agent 手写或缩写 `reports/feishu_daily_eval.md`：
+执行「今日复盘 / 同步飞书」时 **必须** 按下列顺序，**禁止** Agent 手写或缩写 `reports/feishu_*.md`：
 
 1. **拉取 + 导出 Markdown**（一步完成，正文结构由脚本固定）
 2. **新建或更新** 飞书 docx（`lark-cli`，正文来自上一步文件）
 3. （可选）同步云空间列表标题、记入本地 doc id
 
-正文丰富度与终端复盘一致（委托表、成交、按标的汇总、完整操作评价与交易观对照）。此前简版多因跳过 `--feishu-md`、由 Agent 摘要导致。
+正文丰富度与终端复盘一致（委托表、成交、按标的汇总、完整操作评价、**不操作基线对比明细**与交易观对照）。此前简版多因跳过 `--feishu-md`、由 Agent 摘要导致。
 
 ## 1. 拉取复盘并导出 Markdown（QMT）
+
+**单账户**：
 
 ```bash
 cd <qmt-bridge 仓库根>
@@ -20,15 +22,20 @@ cd <qmt-bridge 仓库根>
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
   --host 127.0.0.1 --port 8080 --api-key KEY \
   --feishu-md
-
-# 可选：量能分区
-#   --market-turnover-yi 12500
-# QMT 日 K 异常时：
-#   --no-philosophy-fetch
 ```
 
-- `--feishu-md`：写入 `reports/feishu_daily_eval.md`（UTF-8）
+**全账户综合**（普通户 + 信用户，推荐双账户场景）：
+
+```bash
+python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py \
+  --host 127.0.0.1 --port 8080 --api-key KEY \
+  --feishu-md
+```
+
+- 单账户 `--feishu-md` → `reports/feishu_daily_eval.md`
+- 综合 `--feishu-md` → `reports/feishu_combined_daily_eval.md`
 - `--feishu-md /path/to/custom.md`：指定路径
+- 可选：`--market-turnover-yi 12500`；QMT 日 K 异常时 `--no-philosophy-fetch`
 - 与 `--json` 可并存；**同步飞书前必须先有本步骤产物**
 - H1 / 云文档标题由 `feishu_doc.format_title` 生成，例：`# QMT Trading Skill 当日复盘 2026-05-22 14:30:00`
 
@@ -36,8 +43,8 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 
 | ✅ 必须 | ❌ 禁止 |
 |--------|--------|
-| 使用 §1 生成的 `reports/feishu_daily_eval.md` | Agent 根据终端输出自行整理摘要 |
-| `docs +update --content @reports/feishu_daily_eval.md` | 删减「五、当日操作评价」各小节 |
+| 使用 §1 生成的 `reports/feishu_daily_eval.md` 或 `reports/feishu_combined_daily_eval.md` | Agent 根据终端输出自行整理摘要 |
+| `docs +update --content @reports/feishu_….md` | 删减「五、当日操作评价」各小节（含基线对比表） |
 
 章节结构（脚本固定）：
 
@@ -45,7 +52,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
 2. 当日委托（表格 + 滑点）  
 3. 当日成交  
 4. 按标的成交汇总  
-5. 当日操作评价（交易观、分标的、明日纪律等）
+5. 当日操作评价（**基线对比**、**不操作少赚/多亏明细**、交易观、分标的、明日纪律等）
 
 ## 3. 放置位置（Agent 决策）
 

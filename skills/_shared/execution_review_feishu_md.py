@@ -96,9 +96,48 @@ def format_operation_evaluation_md(ev: DailyOperationEval) -> str:
     ]
     if ev.total_daily_pnl is not None:
         lines.append(f"**当日盈亏合计（估算）**：{_fmt_pnl(ev.total_daily_pnl)}")
+    if (
+        ev.no_trade_total_pnl is not None
+        and ev.total_daily_pnl is not None
+        and ev.op_alpha_total_pnl is not None
+    ):
+        lines.append(
+            f"**基线对比**：不操作约 {_fmt_pnl(ev.no_trade_total_pnl)}；"
+            f"操作后约 {_fmt_pnl(ev.total_daily_pnl)}；"
+            f"操作增量 {_fmt_pnl(ev.op_alpha_total_pnl)}"
+        )
     lines.append(
         f"委托 {ev.order_count} 笔 · 已撤 {ev.cancelled_count} · 成交 {ev.trade_count} 条"
     )
+
+    if ev.stocks and any(s.no_trade_pnl is not None for s in ev.stocks):
+        lines.extend(
+            [
+                "",
+                "### 不操作少赚/多亏明细",
+                "",
+                "> 不操作基线 = 昨仓持有到收盘；操作增量 = 实际操作盈亏 − 不操作基线（负值表示操作让结果更差）。",
+                "",
+                "| 标的 | 操作 | 不操作基线 | 实际操作 | 操作增量 |",
+                "|------|------|-----------|---------|---------|",
+            ]
+        )
+        ranked = sorted(
+            ev.stocks,
+            key=lambda s: (
+                s.op_alpha_pnl is None,
+                s.op_alpha_pnl if s.op_alpha_pnl is not None else 0,
+            ),
+        )
+        for s in ranked:
+            if s.no_trade_pnl is None and s.daily_pnl is None:
+                continue
+            base_s = _fmt_pnl(s.no_trade_pnl) if s.no_trade_pnl is not None else "—"
+            pnl_s = _fmt_pnl(s.daily_pnl) if s.daily_pnl is not None else "—"
+            alpha_s = _fmt_pnl(s.op_alpha_pnl) if s.op_alpha_pnl is not None else "—"
+            lines.append(
+                f"| {_sym(s)} | {s.operation_label} | {base_s} | {pnl_s} | {alpha_s} |"
+            )
 
     if ev.philosophy:
         p = ev.philosophy
