@@ -31,6 +31,7 @@ logs/              # 运行日志 (gitignored)
 ```bash
 pip install -e ".[full,docs,dashboard]"   # 安装全部依赖
 qmt-server --port 8080 --trading          # 启动 API 服务
+scripts\pm2-start.bat                     # Windows PM2 守护（崩溃自动拉起，见 docs/getting-started.md）
 python scripts/download_all.py            # 下载 A 股历史行情 + 财务数据
 python -m pytest tests/ -q                # API 契约测试（无需 QMT）
 python -m ruff format src/ tests/ && python -m ruff check src/ tests/
