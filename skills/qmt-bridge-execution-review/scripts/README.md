@@ -27,3 +27,14 @@ python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --hos
 - `--json` 的 `operation_evaluation` 含 `no_trade_total_pnl`、`op_alpha_total_pnl` 及分标的 `no_trade_pnl` / `op_alpha_pnl`
 - `--feishu-md` 第五节含 **基线对比** 与 **不操作少赚/多亏明细** 表
 - 默认自动拉取当日两市成交额与近 3 日量能热度（`market_turnover_util`）；可用 `--market-turnover-yi` 覆盖。历史缺口见 `qmt-bridge-kline-backfill`
+
+## 定时调度（收盘自动复盘 + 飞书）
+
+不依赖 Windows 任务计划，前台常驻：
+
+```bash
+python scripts/daily_eval_scheduler.py          # 默认每交易日 15:10
+python scripts/daily_eval_scheduler.py --run-now  # 立即执行一次
+```
+
+Windows：`scripts\daily_eval_scheduler.bat`。配置见 `.env` 中 `DAILY_EVAL_SCHEDULE_*`、`FEISHU_DAILY_EVAL_WIKI_PARENT_TOKEN`。
