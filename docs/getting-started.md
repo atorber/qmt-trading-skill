@@ -111,6 +111,23 @@ pm2 start ecosystem.config.cjs --only qmt-scheduler
 
 日志文件：`logs/pm2/`。F5 调试仍用 `.vscode/launch.json`；PM2 用于无断点的后台守护。
 
+### 每日复盘定时调度（不依赖 Windows 任务计划）
+
+前台常驻，到点自动「生成复盘 + 同步飞书」（需 Bridge、QMT、`lark-cli auth` 已就绪）：
+
+```bat
+REM 默认每交易日 15:10（.env 可设 DAILY_EVAL_SCHEDULE_TIME）
+scripts\daily_eval_scheduler.bat
+
+REM 立即跑一次（测试）
+scripts\daily_eval_scheduler.bat --run-now
+
+REM 只生成 Markdown，不上传飞书
+scripts\daily_eval_scheduler.bat --run-now --skip-feishu
+```
+
+日志：`logs/daily_eval_scheduler.log`；状态：`reports/daily_eval_scheduler_state.json`。
+
 ## 5. 验证
 
 在你的 Mac/Linux 浏览器中访问：
