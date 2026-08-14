@@ -1,6 +1,8 @@
 # 快速开始
 
-本仓库是 **Agent Skills** 层：在 Cursor 里用自然语言驱动脚本，通过 HTTP 调用已启动的 **QMT Bridge**。Bridge 的安装与 `qmt-server` 见 [qmt-bridge](https://github.com/atorber/qmt-bridge)。
+本仓库是 **Agent Skills** 层：在 Cursor 里用自然语言驱动脚本，通过 HTTP 调用已启动的 **QMT Bridge**。Bridge 的安装、`qmt-server`、PM2 守护见 [qmt-bridge](https://github.com/atorber/qmt-bridge)（本仓不再包含这些脚本）。
+
+若你仍使用拆分前的单体克隆：请分别检出 [qmt-bridge](https://github.com/atorber/qmt-bridge) 与本仓，并把 Skill 侧 `.env` 改成连接地址（`127.0.0.1`），不要再用服务端的 `0.0.0.0`。
 
 ## 架构
 

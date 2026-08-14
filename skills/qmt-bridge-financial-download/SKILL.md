@@ -90,4 +90,4 @@ python skills/qmt-bridge-financial-download/scripts/download_financial_data.py \
 
 ## 参考
 
-- [fundamental-screen](../qmt-bridge-fundamental-screen/SKILL.md) · `docs/rest-api.md` · [`_shared/financial_util.py`](../_shared/financial_util.py)
+- [fundamental-screen](../qmt-bridge-fundamental-screen/SKILL.md) · `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)` · [`_shared/financial_util.py`](../_shared/financial_util.py)

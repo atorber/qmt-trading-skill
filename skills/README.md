@@ -57,41 +57,12 @@ calendar → watchlist / sector-rank
 
 ## 连接与编码
 
-- **Bridge 启动**：开发调试 `.vscode/launch.json`（F5）；Windows 长期运行见下方 [PM2 守护](#pm2-守护windows-长期运行)
-- **端口**：以 `.env` 中 `QMT_BRIDGE_PORT` 为准；常用 8080 时请显式 `--port 8080`
-- **客户端地址**：脚本连接请用 `127.0.0.1`，不要用 `0.0.0.0`
+- **Bridge 启动与 PM2**：在 [qmt-bridge](https://github.com/atorber/qmt-bridge) 仓库（开发用 F5；长期运行见该仓 `scripts/pm2-start.bat`）。本仓没有 `qmt-server` / PM2 脚本。
+- **端口**：以 Bridge 实际监听端口为准；本仓 `.env` 的 `QMT_BRIDGE_PORT` 必须相同
+- **客户端地址**：脚本连接请用 `127.0.0.1` 或 Windows 局域网 IP，不要用 `0.0.0.0`
 - **Windows 中文乱码**：`chcp 65001` 或 `PYTHONIOENCODING=utf-8`
 
-## PM2 守护（Windows 长期运行）
-
-Agent Skills 依赖 **QMT Bridge** 常驻 HTTP 服务。开发时用 F5 调试；实盘/日常使用时推荐 **PM2** 守护 `qmt-server`，进程崩溃后自动拉起。
-
-**前置**：已安装 Node.js、`npm install -g pm2`，并完成 `pip install -e ".[server,ws,notify]"` 与仓库根 `.env` 配置（端口、`QMT_BRIDGE_TRADING_ENABLED`、`QMT_BRIDGE_API_KEY`、账户 ID 等）。详见 [快速开始 · PM2](../docs/getting-started.md#pm2-守护崩溃自动拉起推荐长期运行)。
-
-```bat
-REM 可选：指定 venv 里的 Python（推荐）
-set PM2_PYTHON=C:\path\to\venv\Scripts\python.exe
-
-REM 启动 API（读 .env，默认仅 qmt-server）
-scripts\pm2-start.bat
-
-REM 常用运维
-pm2 status
-pm2 logs qmt-server
-pm2 restart qmt-server
-scripts\pm2-stop.bat
-```
-
-| 进程 | 说明 | 启动方式 |
-|------|------|----------|
-| `qmt-server` | FastAPI + 交易/行情 API | `scripts\pm2-start.bat`（默认） |
-| `qmt-scheduler` | 定时下载调度（独立进程，按需） | `pm2 start ecosystem.config.cjs --only qmt-scheduler` |
-
-- **配置来源**：`ecosystem.config.cjs` + `.env`；信用户为默认账户时设 `QMT_BRIDGE_DEFAULT_ACCOUNT=credit` 即可，无需改 PM2 配置
-- **日志**：`logs/pm2/qmt-server-out.log`、`qmt-server-error.log`
-- **开机自启**（管理员 PowerShell）：`pm2 startup` → `pm2 save`
-
-**每日复盘定时**（生成 Markdown + 同步飞书）走独立脚本 `scripts\daily_eval_scheduler.bat`，不依赖 Windows 任务计划；需 Bridge、QMT、`lark-cli auth` 已就绪。见 [execution-review](qmt-bridge-execution-review/SKILL.md) 与 [feishu-doc](qmt-bridge-feishu-doc/SKILL.md)。
+**每日复盘定时**（生成 Markdown + 同步飞书）走本仓 `scripts\daily_eval_scheduler.bat`；需 Bridge、QMT、`lark-cli auth` 已就绪。见 [execution-review](qmt-bridge-execution-review/SKILL.md) 与 [feishu-doc](qmt-bridge-feishu-doc/SKILL.md)。
 
 ## 共享模块
 
@@ -109,7 +80,7 @@ done
 
 ## 前置条件
 
-- Bridge 已启动（`.env` 中 `QMT_BRIDGE_TRADING_ENABLED=true` 或 `qmt-server --trading` / PM2）；交易脚本需 `QMT_BRIDGE_API_KEY`
+- Bridge 已启动（在 **qmt-bridge** 上 `QMT_BRIDGE_TRADING_ENABLED=true` 或 `qmt-server --trading` / PM2）；交易脚本需 `QMT_BRIDGE_API_KEY`
 - 双账户复盘：`.env` 配置 `QMT_BRIDGE_STOCK_ACCOUNT_ID` 与 `QMT_BRIDGE_CREDIT_ACCOUNT_ID`
 - 写操作须用户确认；交易类脚本加 `--execute --confirm`
 

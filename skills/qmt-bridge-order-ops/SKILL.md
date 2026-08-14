@@ -50,4 +50,4 @@ python skills/qmt-bridge-order-ops/scripts/cancel_orders.py --sysid 411494 --sto
 
 ## 参考
 
-- [qmt-bridge-trading](../qmt-bridge-trading/SKILL.md) · `docs/rest-api.md`
+- [qmt-bridge-trading](../qmt-bridge-trading/SKILL.md) · `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

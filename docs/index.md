@@ -2,6 +2,8 @@
 
 > 在 Cursor / Claude Code 中用**自然语言**完成 A 股行情、交易、当日盈亏、复盘与飞书同步。底层通过独立仓库 **[QMT Bridge](https://github.com/atorber/qmt-bridge)** 对接 miniQMT。
 
+原先与 QMT Bridge 同仓，现已拆出：本仓只有 Skills，API 在 [qmt-bridge](https://github.com/atorber/qmt-bridge)。影响说明见 [仓库 README](https://github.com/atorber/qmt-trading-skill#仓库拆分升级说明)。
+
 **在线文档**：[QMT Trading Skill（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)
 
 ```

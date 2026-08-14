@@ -5,6 +5,8 @@
 ## 安装
 
 ```bash
+git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
+# 或已有目录：
 git submodule update --init --recursive
 pip install -e "./vendor/qmt-bridge"
 pip install -e ".[dev,docs]"

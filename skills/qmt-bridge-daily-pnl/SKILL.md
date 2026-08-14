@@ -56,4 +56,4 @@ python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --json
 ## 参考
 
 - [qmt-bridge-portfolio-risk](../qmt-bridge-portfolio-risk/SKILL.md) · [qmt-bridge-execution-review](../qmt-bridge-execution-review/SKILL.md)
-- `docs/rest-api.md`
+- `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

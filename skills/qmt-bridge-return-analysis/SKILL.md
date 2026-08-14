@@ -96,4 +96,4 @@ python skills/qmt-bridge-return-analysis/scripts/return_probability_analysis.py 
 ## 参考
 
 - [qmt-bridge-market-watch](../qmt-bridge-market-watch/SKILL.md) · [qmt-bridge-sector-theme](../qmt-bridge-sector-theme/SKILL.md)
-- `docs/rest-api.md`
+- `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

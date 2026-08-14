@@ -9,7 +9,7 @@ Skill 脚本读取环境变量连接 **已启动的 QMT Bridge**。优先级：*
 | 环境变量 | 脚本参数 | 默认 | 说明 |
 |---------|---------|------|------|
 | `QMT_BRIDGE_HOST` | `--host` | `127.0.0.1` | **客户端目标**。用 `127.0.0.1` 或 Windows 局域网 IP，不要用 `0.0.0.0` |
-| `QMT_BRIDGE_PORT` | `--port` | `8000` | 须与 `qmt-server` 一致 |
+| `QMT_BRIDGE_PORT` | `--port` | `8000`（客户端库默认） | 须与 Bridge 实际监听端口一致（其 `.env` 可能不是 8000） |
 | `QMT_BRIDGE_API_KEY` | `--api-key` | 空 | 须与 Bridge 侧一致；交易/持仓类必填 |
 | `QMT_BRIDGE_STOCK_ACCOUNT_ID` | `--account-id` | 空 | 普通户 |
 | `QMT_BRIDGE_CREDIT_ACCOUNT_ID` | | 空 | 信用户 |
