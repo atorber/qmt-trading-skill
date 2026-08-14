@@ -51,4 +51,4 @@ description: >-
 
 ## 参考
 
-- [qmt-bridge-market-watch](../qmt-bridge-market-watch/SKILL.md) · `docs/rest-api.md`
+- [qmt-bridge-market-watch](../qmt-bridge-market-watch/SKILL.md) · `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

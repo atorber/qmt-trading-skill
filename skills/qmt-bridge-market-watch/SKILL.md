@@ -43,4 +43,4 @@ description: >-
 
 ## 参考
 
-- `docs/rest-api.md` · [qmt-bridge-sector-theme](../qmt-bridge-sector-theme/SKILL.md)
+- `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)` · [qmt-bridge-sector-theme](../qmt-bridge-sector-theme/SKILL.md)

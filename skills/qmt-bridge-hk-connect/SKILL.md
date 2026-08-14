@@ -30,4 +30,4 @@ description: >-
 
 ## 参考
 
-- `docs/rest-api.md`
+- `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

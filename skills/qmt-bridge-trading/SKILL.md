@@ -241,7 +241,7 @@ curl -s -X POST "http://HOST:PORT/api/trading/cancel" \
 | 成交 | GET | `/api/trading/trades` |
 | 账户状态 | GET | `/api/trading/account_status` |
 
-完整列表见仓库 `docs/rest-api.md` 与 `src/qmt_bridge/client/trading.py`。
+完整列表见 [Bridge REST API](https://atorber.github.io/qmt-bridge/rest-api/) 与 [trading 客户端](https://github.com/atorber/qmt-bridge/blob/main/src/qmt_bridge/client/trading.py)。
 
 ## 示例对话
 

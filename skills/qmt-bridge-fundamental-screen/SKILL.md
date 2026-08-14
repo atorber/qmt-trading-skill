@@ -89,4 +89,4 @@ python skills/qmt-bridge-financial-download/scripts/download_financial_data.py \
 
 ## 参考
 
-- [financial-download](../qmt-bridge-financial-download/SKILL.md) · `docs/rest-api.md`
+- [financial-download](../qmt-bridge-financial-download/SKILL.md) · `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)`

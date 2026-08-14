@@ -24,7 +24,7 @@ description: >-
 
 | 前缀 | 说明 |
 |------|------|
-| `/api/credit/*` | 融资融券相关（见 `docs/rest-api.md`） |
+| `/api/credit/*` | 融资融券相关（见 [REST API](https://atorber.github.io/qmt-bridge/rest-api/)） |
 | `/api/trading/*` | 部分信用下单可能共用，须区分账户类型 |
 
 ## 规程
@@ -80,4 +80,4 @@ python skills/qmt-bridge-credit-margin/scripts/credit_snapshot.py --port 8080 --
 
 ## 参考
 
-- `docs/rest-api.md` · `src/qmt_bridge/server/routers/credit.py`
+- [REST API](https://atorber.github.io/qmt-bridge/rest-api/) · [credit 路由](https://github.com/atorber/qmt-bridge/blob/main/src/qmt_bridge/server/routers/credit.py)

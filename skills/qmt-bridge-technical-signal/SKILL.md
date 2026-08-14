@@ -42,4 +42,4 @@ description: >-
 
 ## 参考
 
-- `docs/rest-api.md` · [qmt-bridge-realtime-monitor](../qmt-bridge-realtime-monitor/SKILL.md)
+- `[REST API](https://atorber.github.io/qmt-bridge/rest-api/)` · [qmt-bridge-realtime-monitor](../qmt-bridge-realtime-monitor/SKILL.md)
