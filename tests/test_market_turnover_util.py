@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -23,6 +24,12 @@ from market_turnover_util import (  # noqa: E402
 )
 
 
+def _recent_dates(n: int = 3) -> list[str]:
+    """近 n 个日历日，保证落在 is_history_stale 的 4 天窗口内。"""
+    today = date.today()
+    return [(today - timedelta(days=n - 1 - i)).strftime("%Y%m%d") for i in range(n)]
+
+
 class _FakeClient:
     def __init__(self, market_data: dict | None = None, trading_dates: list | None = None):
         self._market_data = market_data or {}
@@ -33,7 +40,7 @@ class _FakeClient:
     def get_trading_dates(self, market, start_time="", end_time="", count=-1):
         if self._trading_dates is not None:
             return self._trading_dates
-        return ["20260618", "20260619", "20260620"]
+        return _recent_dates(3)
 
     def get_market_data(self, stocks, **kwargs):
         self.market_data_calls += 1
@@ -48,10 +55,6 @@ class _FakeClient:
         }
 
 
-def _rows(dates: list[str], amount: float) -> list[dict]:
-    return [{"date": d, "amount": amount} for d in dates]
-
-
 def test_amount_map_from_records():
     m = amount_map_from_records(
         [{"date": "20260620", "amount": 1e12}, {"date": "bad", "amount": 0}]
@@ -60,12 +63,12 @@ def test_amount_map_from_records():
 
 
 def test_build_turnover_history_three_days():
-    target = ["20260618", "20260619", "20260620"]
-    sh = {"20260618": 5e11, "20260619": 5.1e11, "20260620": 5.2e11}
-    sz = {"20260618": 3e11, "20260619": 3.1e11, "20260620": 3.2e11}
+    target = _recent_dates(3)
+    sh = {target[0]: 5e11, target[1]: 5.1e11, target[2]: 5.2e11}
+    sz = {target[0]: 3e11, target[1]: 3.1e11, target[2]: 3.2e11}
     hist = build_turnover_history(sh, sz, target)
     assert len(hist) == 3
-    assert hist[-1].trade_date == "20260620"
+    assert hist[-1].trade_date == target[-1]
     assert hist[-1].turnover_yi == pytest.approx(8400.0, rel=1e-3)
 
 
@@ -94,25 +97,26 @@ def test_fetch_turnover_amount_maps_uses_tick_not_market_data(tmp_path, monkeypa
     assert (tmp_path / "cache.json").is_file()
 
 
+def _write_cache(path: Path, dates: list[str]) -> None:
+    entries = {
+        dates[0]: {"sh_yuan": 5e11, "sz_yuan": 3e11},
+        dates[1]: {"sh_yuan": 5.1e11, "sz_yuan": 3.1e11},
+        dates[2]: {"sh_yuan": 5.2e11, "sz_yuan": 3.2e11},
+    }
+    path.write_text(
+        json.dumps({"entries": entries}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
 def test_fetch_turnover_history_from_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "market_turnover_util.DEFAULT_CACHE_PATH",
         tmp_path / "cache.json",
     )
-    cache_path = tmp_path / "cache.json"
-    cache_path.write_text(
-        """{
-  "entries": {
-    "20260618": {"sh_yuan": 5e11, "sz_yuan": 3e11},
-    "20260619": {"sh_yuan": 5.1e11, "sz_yuan": 3.1e11},
-    "20260620": {"sh_yuan": 5.2e11, "sz_yuan": 3.2e11}
-  }
-}""",
-        encoding="utf-8",
-    )
-    client = _FakeClient(
-        trading_dates=["20260618", "20260619", "20260620"],
-    )
+    dates = _recent_dates(3)
+    _write_cache(tmp_path / "cache.json", dates)
+    client = _FakeClient(trading_dates=dates)
     hist = fetch_turnover_history(client, 3)
     assert len(hist) == 3
     assert client.market_data_calls == 0
@@ -123,23 +127,16 @@ def test_ensure_recent_turnover_ok_from_cache(tmp_path, monkeypatch):
         "market_turnover_util.DEFAULT_CACHE_PATH",
         tmp_path / "cache.json",
     )
-    (tmp_path / "cache.json").write_text(
-        """{
-  "entries": {
-    "20260618": {"sh_yuan": 5e11, "sz_yuan": 3e11},
-    "20260619": {"sh_yuan": 5.1e11, "sz_yuan": 3.1e11},
-    "20260620": {"sh_yuan": 5.2e11, "sz_yuan": 3.2e11}
-  }
-}""",
-        encoding="utf-8",
-    )
-    client = _FakeClient(trading_dates=["20260618", "20260619", "20260620"])
+    dates = _recent_dates(3)
+    _write_cache(tmp_path / "cache.json", dates)
+    client = _FakeClient(trading_dates=dates)
     result = ensure_recent_turnover(client, 3)
     assert result["ok"] is True
     assert result["method"] == "full_tick+cache"
-    assert result["target_dates"] == ["20260618", "20260619", "20260620"]
+    assert result["target_dates"] == dates
 
 
 def test_get_recent_trading_dates():
-    client = _FakeClient(trading_dates=["20260618", "20260619", "20260620", "20260622"])
-    assert get_recent_trading_dates(client, 3) == ["20260619", "20260620", "20260622"]
+    dates = _recent_dates(4)
+    client = _FakeClient(trading_dates=dates)
+    assert get_recent_trading_dates(client, 3) == dates[-3:]

@@ -8,7 +8,8 @@
 git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
 # 或已有目录：
 git submodule update --init --recursive
-pip install -e "./vendor/qmt-bridge"
+pip install qmt-bridge-pro
+# 对照改 Bridge 源码时：pip install -e "./vendor/qmt-bridge"
 pip install -e ".[dev,docs]"
 ```
 

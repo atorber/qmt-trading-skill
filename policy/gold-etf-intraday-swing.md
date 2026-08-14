@@ -932,7 +932,7 @@ Step 15  持续迭代（每周复盘、每月参数检查）
 ## 七、技术栈
 
 ```
-策略项目：Python（独立项目，pip install qmt-bridge 引入客户端）
+策略项目：Python（独立项目，pip install qmt-bridge-pro 引入客户端）
 
 数据获取：qmt-bridge QMTClient
   ├── subscribe_realtime → 实时行情（WebSocket）

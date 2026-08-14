@@ -34,10 +34,12 @@ qmt-server --port 8080 --trading --api-key your-secret-key \
 ```bash
 git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
 cd qmt-trading-skill
-pip install -e "./vendor/qmt-bridge"
+pip install qmt-bridge-pro
 pip install -e ".[dev]"
 cp .env.example .env
 ```
+
+开发对照 Bridge 源码：`pip install -e "./vendor/qmt-bridge"`。
 
 编辑 `.env`：`QMT_BRIDGE_HOST` / `QMT_BRIDGE_PORT` / `QMT_BRIDGE_API_KEY` 须与 Bridge 一致。
 
