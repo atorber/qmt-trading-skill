@@ -6,25 +6,16 @@
 
 ## 开发（对照并修改 Bridge）
 
-本地并列检出，可编辑安装后改 Bridge 立即生效：
+本仓已嵌套 `vendor/qmt-bridge`（Git submodule）。改 Bridge 后先在子模块里提交推送，再更新本仓指针。
 
 ```powershell
-# 已有 C:\GitHub\qmt-bridge 与本仓库时
 cd C:\GitHub\qmt-trading-skill
-pip install -e "..\qmt-bridge"
+git submodule update --init --recursive
+pip install -e ".\vendor\qmt-bridge"
 pip install -e ".[dev]"
 ```
 
-用多根工作区同时打开两仓：打开 `qmt-trading-skill.code-workspace`。
-
-独立 GitHub 仓建好后，可再加 submodule（把 Bridge commit 锁进本仓）：
-
-```powershell
-git submodule add https://github.com/atorber/qmt-bridge.git vendor/qmt-bridge
-pip install -e ".\vendor\qmt-bridge"
-```
-
-> 注意：历史上 `github.com/atorber/qmt-bridge` 曾重定向到本仓库。请先在 GitHub **新建空仓库**（不要沿用旧重定向），再把 `C:\GitHub\qmt-bridge` 推上去，然后执行上面的 `submodule add`。
+也可以继续用并列目录 `C:\GitHub\qmt-bridge`（与 submodule 是同一远程）。打开 `qmt-trading-skill.code-workspace` 可同时浏览两仓。
 
 ## 使用
 
