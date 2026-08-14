@@ -3,93 +3,38 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "qmt-bridge"
-dynamic = ["version"]
-description = "QMT Bridge：HTTP/WebSocket API + QMTClient，对接 miniQMT 行情与交易"
+name = "qmt-trading-skill"
+version = "1.0.0"
+description = "Agent Skills：通过 QMT Bridge HTTP API 用自然语言完成行情、交易、复盘与飞书同步"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
-authors = [{ name = "QMT Bridge Contributors" }]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Framework :: FastAPI",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Office/Business :: Financial :: Investment",
+dependencies = [
+    "qmt-bridge>=2.9.0",
 ]
-
-# Base install has zero dependencies (client-only, stdlib)
-dependencies = []
 
 [project.optional-dependencies]
-server = [
-    "fastapi>=0.100",
-    "uvicorn[standard]>=0.20",
-    "pandas>=1.5",
-    "numpy>=1.23",
-]
-pandas = ["pandas>=1.5"]
-ws = ["websockets>=11.0"]
-client = ["websockets>=11.0"]
-notify = ["httpx>=0.25"]
-scripts = ["tqdm>=4.60"]
-full = [
-    "qmt-bridge[server,ws,notify,scripts]",
-]
-docs = [
-    "mkdocs>=1.5",
-    "mkdocs-material>=9.0",
-    "mkdocstrings[python]>=0.24",
-    "pdoc>=14.0",
-]
-dashboard = [
-    "streamlit>=1.30",
-    "plotly>=5.18",
-    "pandas>=1.5",
-]
-test = [
+dev = [
     "pytest>=7.4",
-    "httpx>=0.25",
-    "qmt-bridge[server]",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
-addopts = "-m 'not live'"
-markers = [
-    "live: 对已启动的真实 QMT Bridge 联调（需 QMT_BRIDGE_LIVE=1）",
-]
-filterwarnings = [
-    "ignore:Duplicate Operation ID:UserWarning",
-]
-
-[project.scripts]
-qmt-server = "qmt_bridge.server.cli:main"
-qmt-scheduler = "qmt_bridge.server.cli:scheduler_main"
 
 [project.urls]
-Homepage = "https://github.com/atorber/qmt-bridge"
-Repository = "https://github.com/atorber/qmt-bridge"
-
-[tool.hatch.version]
-path = "src/qmt_bridge/_version.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/qmt_bridge"]
+Homepage = "https://github.com/atorber/qmt-trading-skill"
+Repository = "https://github.com/atorber/qmt-trading-skill"
+Bridge = "https://github.com/atorber/qmt-bridge"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/qmt_bridge",
-    "tests",
+    "skills",
     "README.md",
     "LICENSE",
     "pyproject.toml",
 ]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["skills"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
