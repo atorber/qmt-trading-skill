@@ -123,7 +123,7 @@ def make_client(args, *, require_api_key: bool = True):
         from qmt_bridge import QMTClient
     except ImportError:
         print(
-            "错误: 未安装 qmt-bridge。请执行: pip install qmt-bridge 或 pip install -e ./vendor/qmt-bridge",
+            "错误: 未安装 qmt-bridge。请执行: pip install qmt-bridge-pro 或 pip install -e ./vendor/qmt-bridge",
             file=sys.stderr,
         )
         sys.exit(2)
