@@ -1,77 +1,38 @@
-# QMT Bridge
+# QMT Trading Skill
 
-> 将 miniQMT（xtquant）封装为 HTTP/WebSocket API，供局域网内任意语言调用。Agent Skills 工作流见独立仓库 [qmt-trading-skill](https://github.com/atorber/qmt-trading-skill)。
+> 在 Cursor / Claude Code 中用**自然语言**完成 A 股行情、交易、当日盈亏、复盘与飞书同步。底层通过独立仓库 **[QMT Bridge](https://github.com/atorber/qmt-bridge)** 对接 miniQMT。
 
-**在线文档**：[QMT Bridge 文档](https://atorber.github.io/qmt-bridge/)（push `main` 后由 GitHub Pages 发布）。
+本仓库只含 **Agent Skills**（`skills/`）。HTTP API 与 `qmt-server` 在 `qmt-bridge`。
 
-```
-Mac / Linux / easy-auto                 Windows（与 QMT 同机）
-┌──────────────────────┐                ┌─────────────────────────┐
-│  QMTClient / HTTP    │   HTTP/WS     │  miniQMT 客户端（登录中）  │
-│  Agent Skills        │ ◄───────────► │  qmt-server (本仓库)      │
-└──────────────────────┘   局域网       │  xtquant                 │
-                                       └─────────────────────────┘
-```
+## 开发（对照并修改 Bridge）
 
-## 安装
+本地并列检出，可编辑安装后改 Bridge 立即生效：
 
-```bash
-git clone https://github.com/atorber/qmt-bridge.git
-cd qmt-bridge
-pip install -e ".[full]"
-cp .env.example .env
+```powershell
+# 已有 C:\GitHub\qmt-bridge 与本仓库时
+cd C:\GitHub\qmt-trading-skill
+pip install -e "..\qmt-bridge"
+pip install -e ".[dev]"
 ```
 
-仅客户端（零依赖 stdlib）：`pip install qmt-bridge` 或 `pip install -e ".[client]"`。
+用多根工作区同时打开两仓：打开 `qmt-trading-skill.code-workspace`。
 
-## 启动
+独立 GitHub 仓建好后，可再加 submodule（把 Bridge commit 锁进本仓）：
 
-QMT 勾选「独立交易」登录并保持运行，然后：
-
-```bash
-qmt-server --port 8080
-
-qmt-server --port 8080 --trading --api-key your-secret-key \
-  --mini-qmt-path "C:\你的QMT路径\userdata_mini" \
-  --stock-account-id 普通账户ID --credit-account-id 信用账户ID
+```powershell
+git submodule add https://github.com/atorber/qmt-bridge.git vendor/qmt-bridge
+pip install -e ".\vendor\qmt-bridge"
 ```
 
-验证：`http://127.0.0.1:8080/docs` 或 `GET /api/meta/health`。长期运行见 `scripts/pm2-start.bat`。
+> 注意：历史上 `github.com/atorber/qmt-bridge` 曾重定向到本仓库。请先在 GitHub **新建空仓库**（不要沿用旧重定向），再把 `C:\GitHub\qmt-bridge` 推上去，然后执行上面的 `submodule add`。
 
-| 环境变量 | 默认 | 说明 |
-|---------|------|------|
-| `QMT_BRIDGE_HOST` | `0.0.0.0` | 监听地址 |
-| `QMT_BRIDGE_PORT` | `8000` | 端口 |
-| `QMT_BRIDGE_API_KEY` | 空 | 设置后交易端点须带 `X-API-Key` |
-| `QMT_BRIDGE_TRADING_ENABLED` | `false` | 等同 `--trading` |
+## 使用
 
-完整配置见 [docs/configuration.md](docs/configuration.md)。
+1. Windows 上启动 Bridge：`qmt-server --port 8080 --trading`（见 qmt-bridge 文档）
+2. 本机 `.env` 配置 `QMT_BRIDGE_HOST` / `QMT_BRIDGE_PORT` / `QMT_BRIDGE_API_KEY`
+3. 对话中直接说「今天账户盈亏多少」，或 `@skills/qmt-bridge-daily-pnl/SKILL.md`
 
-## Python 客户端
-
-```python
-from qmt_bridge import QMTClient
-
-client = QMTClient(host="127.0.0.1", port=8080, api_key="your-key")
-snapshot = client.get_market_snapshot(["000001.SZ"])
-```
-
-账户解析（Skill / 自研脚本共用，不依赖 FastAPI）：
-
-```python
-from qmt_bridge.accounts import resolve_default_trading_account
-```
-
-## 文档
-
-| 文档 | 说明 |
-|------|------|
-| [快速开始](docs/getting-started.md) | 安装、启动、客户端示例 |
-| [REST API](docs/rest-api.md) | HTTP 参数与响应 |
-| [WebSocket](docs/websocket.md) | 实时推送 |
-| [Python 客户端](docs/api/index.md) | `QMTClient` |
-
-自然语言交易 / 复盘工作流请使用 [qmt-trading-skill](https://github.com/atorber/qmt-trading-skill)（开发时可 submodule 嵌套本仓库）。
+Skill 列表见 [skills/README.md](skills/README.md)。
 
 ## 许可
 

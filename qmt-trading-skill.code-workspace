@@ -1,0 +1,7 @@
+{
+  "folders": [
+    { "path": ".", "name": "qmt-trading-skill" },
+    { "path": "../qmt-bridge", "name": "qmt-bridge" }
+  ],
+  "settings": {}
+}
