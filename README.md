@@ -19,7 +19,7 @@
 
 1. **不能再只克隆一个仓就同时跑服务端和 Skills。** 先在 Windows（与 QMT 同机）按 Bridge 文档启动 `qmt-server`，再在本仓跑 Agent / 脚本。
 2. **本仓不再提供** `qmt-server`、`scripts/pm2-start.bat`、`ecosystem.config.cjs`、Streamlit 仪表盘。长期守护 API 请到 **qmt-bridge** 使用 PM2。
-3. **PyPI 包名不变**：`pip install qmt-bridge` 仍安装客户端/服务端库。Skills 运行时依赖 `qmt-bridge>=2.9.0`；开发建议 `pip install -e ./vendor/qmt-bridge`（Git submodule）。
+3. **PyPI 包名**：`pip install qmt-bridge-pro`（导入仍是 `qmt_bridge`）。Skills 运行时依赖 `qmt-bridge-pro>=2.10.1`；开发建议 `pip install -e ./vendor/qmt-bridge`（Git submodule）。
 4. **克隆须带子模块**：`git clone --recurse-submodules ...`。已克隆过的目录执行 `git submodule update --init --recursive`。
 5. **`.env` 拆成两份**：Bridge 仓配置监听地址（可为 `0.0.0.0`）、交易开关、miniQMT 路径；本仓只配**客户端连接**（`QMT_BRIDGE_HOST=127.0.0.1` 或 Windows 局域网 IP，**不要用 `0.0.0.0`**），端口和 API Key 须与 Bridge 实际监听一致。
 6. **旧书签**：REST / `QMTClient` 文档改看 Bridge Pages；自然语言工作流改看本仓 Pages。若你本地目录仍叫 `qmt-bridge` 但远程是 Skill 仓，请按上面两个 URL 重新认领仓库。
