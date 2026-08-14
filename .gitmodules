@@ -1,0 +1,3 @@
+[submodule "vendor/qmt-bridge"]
+	path = vendor/qmt-bridge
+	url = https://github.com/atorber/qmt-bridge.git

@@ -11,12 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install qmt-bridge (PyPI) and skills
+      - name: Install qmt-bridge from submodule and skills
         run: |
-          pip install "qmt-bridge>=2.9.0"
+          pip install -e "./vendor/qmt-bridge"
           pip install -e ".[dev]"
       - name: Skill tests
         run: python -m pytest tests/ -q
