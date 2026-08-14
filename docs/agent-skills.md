@@ -6,12 +6,10 @@
 
 ## 环境准备
 
-1. 安装项目：`pip install -e .` 或 `pip install -e ".[full]"`
-2. 复制配置：`cp .env.example .env`
-3. 启用交易相关 Skill 时配置：
-   - `QMT_BRIDGE_API_KEY`
-   - `QMT_BRIDGE_STOCK_ACCOUNT_ID` / `QMT_BRIDGE_CREDIT_ACCOUNT_ID`（可选）
-4. Bridge 已启动且 QMT 已登录（`qmt-server --trading ...`）
+1. 安装：`pip install -e "./vendor/qmt-bridge"` 与 `pip install -e ".[dev]"`
+2. 复制配置：`cp .env.example .env`（`QMT_BRIDGE_HOST` 用 `127.0.0.1` 或局域网 IP）
+3. 启用交易相关 Skill 时配置 `QMT_BRIDGE_API_KEY` 与账户 ID
+4. Bridge 已启动且 QMT 已登录（见 [qmt-bridge](https://github.com/atorber/qmt-bridge)）
 
 !!! tip "客户端连接地址"
     `.env` 中 `QMT_BRIDGE_HOST=0.0.0.0` 仅用于**服务端监听**。在本机跑 Agent 脚本时请用 **`127.0.0.1`**，或在命令行传 `--host 127.0.0.1`，不要用 `0.0.0.0` 作为客户端目标地址。

@@ -1,7 +1,7 @@
 # Skill 测试
 
 ```bash
-pip install -e ../qmt-bridge
+pip install -e "./vendor/qmt-bridge"
 pip install -e ".[dev]"
 python -m pytest tests/ -q
 ```

@@ -1,3 +1,4 @@
+# Agent Skills 测试（依赖 vendor/qmt-bridge submodule）
 name: CI
 
 on:
@@ -6,19 +7,26 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
+    name: Skill tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install qmt-bridge from submodule and skills
+
+      - name: Install qmt-bridge (submodule) and pytest
         run: |
           pip install -e "./vendor/qmt-bridge"
-          pip install -e ".[dev]"
-      - name: Skill tests
-        run: python -m pytest tests/ -q
+          pip install "pytest>=7.4"
+
+      - name: Run skill tests
+        run: python -m pytest tests/ -q --tb=short
