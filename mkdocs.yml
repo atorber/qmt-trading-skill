@@ -1,5 +1,5 @@
 site_name: QMT Trading Skill
-site_description: Agent Skills for QMT Bridge
+site_description: Agent Skills for QMT Bridge — 自然语言行情、交易与复盘
 site_url: !ENV [MKDOCS_SITE_URL, 'http://127.0.0.1:8001/']
 repo_url: https://github.com/atorber/qmt-trading-skill
 edit_uri: edit/main/docs/
@@ -10,15 +10,24 @@ theme:
   palette:
     - scheme: default
       primary: indigo
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - search.highlight
+    - content.code.copy
 
 nav:
   - 首页: index.md
+  - 快速开始: getting-started.md
+  - 配置参考: configuration.md
+  - 开发指南: development.md
   - Agent Skills: agent-skills.md
   - 示例:
       - 每日复盘报告: examples/daily-eval-report.md
 
 markdown_extensions:
   - admonition
+  - pymdownx.highlight
   - pymdownx.superfences
   - toc:
       permalink: true

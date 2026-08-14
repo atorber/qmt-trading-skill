@@ -1,5 +1,36 @@
 # QMT Trading Skill
 
-Agent Skills 工作流。API 服务见独立仓库 [qmt-bridge](https://github.com/atorber/qmt-bridge)。
+> 在 Cursor / Claude Code 中用**自然语言**完成 A 股行情、交易、当日盈亏、复盘与飞书同步。底层通过独立仓库 **[QMT Bridge](https://github.com/atorber/qmt-bridge)** 对接 miniQMT。
 
-完整列表：[skills/README.md](../skills/README.md) · [agent-skills.md](agent-skills.md)
+**在线文档**：[QMT Trading Skill（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)
+
+```
+主力机（本仓库）                            Windows（QMT Bridge）
+┌──────────────────────┐                ┌─────────────────────────┐
+│ Cursor / Agent       │   HTTP/WS     │  miniQMT 客户端（登录中）  │
+│ skills/*/scripts     │ ◄───────────► │  qmt-server              │
+└──────────────────────┘   局域网       └─────────────────────────┘
+```
+
+## 文档
+
+| 文档 | 说明 |
+|------|------|
+| [快速开始](getting-started.md) | 安装 Skill、连接 Bridge、对话用法 |
+| [配置参考](configuration.md) | Skill 侧环境变量（连接 Bridge） |
+| [开发指南](development.md) | 脚本路径、测试、飞书、submodule |
+| [Agent Skills](agent-skills.md) | 全部 Skill 与提示词 |
+| [每日复盘示例](examples/daily-eval-report.md) | 复盘 Markdown 结构（金额已脱敏） |
+| [QMT Bridge 文档](https://atorber.github.io/qmt-bridge/) | HTTP/WS API、`qmt-server` 启动 |
+
+## 安装
+
+```bash
+git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
+cd qmt-trading-skill
+pip install -e "./vendor/qmt-bridge"
+pip install -e ".[dev]"
+cp .env.example .env
+```
+
+Windows 上须先启动 Bridge，见 [qmt-bridge 快速开始](https://github.com/atorber/qmt-bridge/blob/main/docs/getting-started.md)。

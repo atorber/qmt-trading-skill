@@ -17,6 +17,10 @@ dependencies = [
 dev = [
     "pytest>=7.4",
 ]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/atorber/qmt-trading-skill"
@@ -26,6 +30,7 @@ Bridge = "https://github.com/atorber/qmt-bridge"
 [tool.hatch.build.targets.sdist]
 include = [
     "skills",
+    "docs",
     "README.md",
     "LICENSE",
     "pyproject.toml",

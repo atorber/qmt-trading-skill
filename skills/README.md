@@ -4,8 +4,9 @@
 
 在线文档：
 
-- **[QMT Trading Skill 文档（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)** — 快速开始、配置、Agent Skills、API 速查等
+- **[QMT Trading Skill 文档（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)** — 快速开始、配置、Agent Skills
 - [Agent Skills（仓库内）](../docs/agent-skills.md) · [每日复盘示例](../docs/examples/daily-eval-report.md)
+- Bridge API：[qmt-bridge 文档](https://atorber.github.io/qmt-bridge/)
 
 ## 怎么用（推荐）
 
