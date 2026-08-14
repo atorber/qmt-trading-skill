@@ -30,9 +30,11 @@
 ```bash
 git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
 cd qmt-trading-skill
-pip install -e "./vendor/qmt-bridge"
+pip install qmt-bridge-pro
 pip install -e ".[dev]"
 cp .env.example .env
 ```
+
+开发对照源码：`pip install -e "./vendor/qmt-bridge"`。导入仍为 `from qmt_bridge import QMTClient`。
 
 Windows 上须先启动 Bridge，见 [qmt-bridge 快速开始](https://github.com/atorber/qmt-bridge/blob/main/docs/getting-started.md)。

@@ -6,7 +6,7 @@
 
 ## 环境准备
 
-1. 安装：`pip install -e "./vendor/qmt-bridge"` 与 `pip install -e ".[dev]"`
+1. 安装：`pip install qmt-bridge-pro`（或开发用 `pip install -e "./vendor/qmt-bridge"`）与 `pip install -e ".[dev]"`
 2. 复制配置：`cp .env.example .env`（`QMT_BRIDGE_HOST` 用 `127.0.0.1` 或局域网 IP）
 3. 启用交易相关 Skill 时配置 `QMT_BRIDGE_API_KEY` 与账户 ID
 4. Bridge 已启动且 QMT 已登录（见 [qmt-bridge](https://github.com/atorber/qmt-bridge)）

@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install qmt-bridge (submodule) and pytest
+      - name: Install qmt-bridge-pro (from submodule) and pytest
         run: |
           pip install -e "./vendor/qmt-bridge"
           pip install "pytest>=7.4"

@@ -12,7 +12,7 @@
 
 | 仓库 | 内容 | 文档 |
 |------|------|------|
-| [atorber/qmt-bridge](https://github.com/atorber/qmt-bridge) | `qmt-server`、REST/WebSocket、`QMTClient`、PyPI 包 `qmt-bridge` | [atorber.github.io/qmt-bridge](https://atorber.github.io/qmt-bridge/) |
+| [atorber/qmt-bridge](https://github.com/atorber/qmt-bridge) | `qmt-server`、REST/WebSocket、`QMTClient`、PyPI 包 **`qmt-bridge-pro`** | [atorber.github.io/qmt-bridge](https://atorber.github.io/qmt-bridge/) |
 | **本仓库** [atorber/qmt-trading-skill](https://github.com/atorber/qmt-trading-skill) | `skills/`、复盘调度、Skill 文档 | [atorber.github.io/qmt-trading-skill](https://atorber.github.io/qmt-trading-skill/) |
 
 对已有用户的影响：
@@ -34,10 +34,12 @@
 ```powershell
 git clone --recurse-submodules https://github.com/atorber/qmt-trading-skill.git
 cd qmt-trading-skill
-pip install -e ".\vendor\qmt-bridge"
+pip install qmt-bridge-pro
 pip install -e ".[dev]"
 cp .env.example .env
 ```
+
+开发对照 Bridge 源码时用 `pip install -e ".\vendor\qmt-bridge"` 代替上一行 PyPI 安装。
 
 3. `.env` 配置 `QMT_BRIDGE_HOST=127.0.0.1`、`QMT_BRIDGE_PORT`、`QMT_BRIDGE_API_KEY`
 4. 对话中说「今天账户盈亏多少」，或 `@skills/qmt-bridge-daily-pnl/SKILL.md`
