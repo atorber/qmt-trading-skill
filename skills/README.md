@@ -1,6 +1,6 @@
 # Agent Skills
 
-本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **22 个**，均已提供可执行脚本（见 [ROADMAP.md](ROADMAP.md)）。
+本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **23 个**，均已提供可执行脚本或规程（见 [ROADMAP.md](ROADMAP.md)）。
 
 在线文档：
 
@@ -20,6 +20,7 @@
 
 | Skill | 说明 | 提示词示例 |
 |-------|------|------------|
+| [qmt-bridge-setup](qmt-bridge-setup/SKILL.md) | 安装/启动 Bridge | `检查 Bridge 是否已启动；未启动再安装启动` · `帮我安装并启动 QMT Bridge` · `Bridge 连不上，做健康检查` |
 | [qmt-bridge-trading](qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
 | [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | 当日复盘/操作评价（含不操作基线对比） | `今日操作评估` · `普通户+信用户综合复盘` · `列不操作少赚/多亏明细` · `评价今天买卖是否合理` |
 | [qmt-bridge-feishu-doc](qmt-bridge-feishu-doc/SKILL.md) | 上传报告到飞书 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书文档` |
@@ -46,7 +47,8 @@
 ## 推荐工作流
 
 ```
-calendar → watchlist / sector-rank
+setup（安装/启动 Bridge）
+    → calendar → watchlist / sector-rank
     → download-financial → fundamental-screen
     → return-analysis / watchlist → portfolio-risk → daily-pnl
     → execution-preview → trading → order-ops
