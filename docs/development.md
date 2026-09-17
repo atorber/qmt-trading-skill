@@ -1,6 +1,6 @@
 # 开发指南
 
-本仓库只含 **Agent Skills**。HTTP API 实现在 [qmt-bridge](https://github.com/atorber/qmt-bridge)。人类使用时优先**自然语言 + `@skills/.../SKILL.md`**；下列命令供开发与调试。
+本仓库只含 **Agent Skills**。HTTP API 实现在 [qmt-bridge](https://github.com/atorber/qmt-bridge)。人类使用时优先**自然语言 + `@skills/.../SKILL.md`**（Cursor / 豆包工作 / WorkBuddy）；下列命令供开发与调试。
 
 ## 安装
 
@@ -19,9 +19,10 @@ pip install -e ".[dev,docs]"
 
 ## Agent 脚本路径
 
-均需 Bridge 已运行；交易类需 `QMT_BRIDGE_API_KEY`。连接用 **`127.0.0.1`**。
+均需 Bridge 已运行；交易类需 `QMT_BRIDGE_API_KEY`。连接用 **`127.0.0.1`**。先确认服务可达：
 
 ```bash
+python skills/qmt-bridge-setup/scripts/bridge_health.py --host 127.0.0.1 --port 8080
 python skills/qmt-bridge-trading/scripts/trading_status.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY

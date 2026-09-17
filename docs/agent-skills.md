@@ -1,15 +1,16 @@
 # Agent Skills
 
-**QMT Trading Skill** 在 [`skills/`](../skills/) 提供 **22 个 Agent Skills**（底层调用 **QMT Bridge** API），均已配套可执行 Python 脚本。人类通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
+**QMT Trading Skill** 在 [`skills/`](../skills/) 提供 **23 个 Agent Skills**（底层调用 **QMT Bridge** API），均已配套可执行 Python 脚本或安装规程。可在 Cursor / Claude Code / 豆包工作 / WorkBuddy 中通过**自然语言**或 `@` Skill 触发，由 Agent 执行脚本，无需记忆命令别名。
 
 **路线图**：[skills/ROADMAP.md](../skills/ROADMAP.md) · **总览**：[skills/README.md](../skills/README.md) · **开发命令**：[开发指南](development.md)
 
 ## 环境准备
 
-1. 安装：`pip install qmt-bridge-pro`（或开发用 `pip install -e "./vendor/qmt-bridge"`）与 `pip install -e ".[dev]"`
-2. 复制配置：`cp .env.example .env`（`QMT_BRIDGE_HOST` 用 `127.0.0.1` 或局域网 IP）
-3. 启用交易相关 Skill 时配置 `QMT_BRIDGE_API_KEY` 与账户 ID
-4. Bridge 已启动且 QMT 已登录（见 [qmt-bridge](https://github.com/atorber/qmt-bridge)）
+1. 安装本仓全部 Skills（见 [快速开始](getting-started.md)）
+2. 检测 Bridge：对话说「检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动」（[qmt-bridge-setup](../skills/qmt-bridge-setup/SKILL.md)）。**已可达则不要重复安装或重启**
+3. 开发克隆时：`pip install qmt-bridge-pro`（或 `pip install -e "./vendor/qmt-bridge"`）与 `pip install -e ".[dev]"`，并 `cp .env.example .env`
+4. `.env` 中 `QMT_BRIDGE_HOST` 用 `127.0.0.1` 或局域网 IP；启用交易时配置 `QMT_BRIDGE_API_KEY` 与账户 ID
+5. QMT 已以「独立交易」登录（Windows 与 Bridge 同机）
 
 !!! tip "客户端连接地址"
     `.env` 中 `QMT_BRIDGE_HOST=0.0.0.0` 仅用于**服务端监听**。在本机跑 Agent 脚本时请用 **`127.0.0.1`**，或在命令行传 `--host 127.0.0.1`，不要用 `0.0.0.0` 作为客户端目标地址。
@@ -18,15 +19,38 @@ Windows 终端中文乱码：`chcp 65001` 或 `set PYTHONIOENCODING=utf-8`。
 
 ## 快速开始（自然语言）
 
-在 Cursor 中直接说，例如：
+在对话中直接说即可。每个 Skill 一条典型提示词：
 
-- `帮我查持仓和可用资金`
-- `今天账户盈亏多少`
-- `生成今日交易复盘并同步到飞书`
+| Skill | 提示词 |
+|-------|--------|
+| [setup](../skills/qmt-bridge-setup/SKILL.md) | `检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动` |
+| [trading](../skills/qmt-bridge-trading/SKILL.md) | `帮我查持仓和可用资金` |
+| [execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | `生成今日交易复盘并评价操作质量` |
+| [feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | `把今日复盘同步到飞书` |
+| [portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | `组合风险快照，看下持仓集中度` |
+| [daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | `今天账户盈亏多少` |
+| [order-ops](../skills/qmt-bridge-order-ops/SKILL.md) | `查今日委托和可撤单` |
+| [kline-backfill](../skills/qmt-bridge-kline-backfill/SKILL.md) | `复盘前检查近3日两市成交额` |
+| [return-analysis](../skills/qmt-bridge-return-analysis/SKILL.md) | `评估持仓涨幅概率并总结明日策略` |
+| [market-watch](../skills/qmt-bridge-market-watch/SKILL.md) | `自选行情快照` |
+| [sector-theme](../skills/qmt-bridge-sector-theme/SKILL.md) | `今天行业强弱怎么排` |
+| [financial-download](../skills/qmt-bridge-financial-download/SKILL.md) | `下载财报到 Bridge 缓存` |
+| [fundamental-screen](../skills/qmt-bridge-fundamental-screen/SKILL.md) | `按 ROE、EPS 做基本面筛选` |
+| [technical-signal](../skills/qmt-bridge-technical-signal/SKILL.md) | `用 QMT 公式检查是否金叉` |
+| [smart-execution](../skills/qmt-bridge-smart-execution/SKILL.md) | `预览这笔买单会不会涨跌停` |
+| [rebalance](../skills/qmt-bridge-rebalance/SKILL.md) | `按目标权重生成调仓计划` |
+| [credit-margin](../skills/qmt-bridge-credit-margin/SKILL.md) | `查两融保证金和担保品` |
+| [realtime-monitor](../skills/qmt-bridge-realtime-monitor/SKILL.md) | `WebSocket 订阅实时行情` |
+| [event-calendar](../skills/qmt-bridge-event-calendar/SKILL.md) | `今天是不是交易日` |
+| [etf](../skills/qmt-bridge-etf/SKILL.md) | `查 ETF 列表和申赎清单` |
+| [convertible](../skills/qmt-bridge-convertible/SKILL.md) | `可转债列表和条款快照` |
+| [option](../skills/qmt-bridge-option/SKILL.md) | `查 510050 期权链` |
+| [hk-connect](../skills/qmt-bridge-hk-connect/SKILL.md) | `港股通标的有哪些` |
 
 Agent 会读取对应 `SKILL.md` 并执行脚本。若需手动跑脚本（路径见各 Skill 文档）：
 
 ```bash
+python skills/qmt-bridge-setup/scripts/bridge_health.py --host 127.0.0.1 --port 8080
 python skills/qmt-bridge-trading/scripts/trading_status.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 python skills/qmt-bridge-daily-pnl/scripts/daily_pnl_snapshot.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key YOUR_KEY
@@ -34,16 +58,17 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 
 ## 提示词怎么用
 
-1. **自然语言**（推荐）：直接说下表「提示词示例」中的句子。
+1. **自然语言**（推荐）：直接说上表或下表「提示词示例」中的句子。
 2. **@ Skill**：`@skills/qmt-bridge-daily-pnl/SKILL.md` 等。
 3. **命令行**（可选）：`python skills/.../scripts/*.py`（见各 Skill 的 `SKILL.md`）。
 
 写操作须用户确认，脚本加 `--execute --confirm`。仓库内同源表格：[skills/README.md](../skills/README.md)。
 
-## 全部 Skills（含提示词）
+## 全部 Skills（含更多提示词变体）
 
 | Skill | 说明 | 提示词示例 |
 |-------|------|------------|
+| [qmt-bridge-setup](../skills/qmt-bridge-setup/SKILL.md) | 安装/启动 Bridge | `检查 Bridge 是否已启动；未启动再安装启动` · `帮我安装并启动 QMT Bridge` · `Bridge 连不上，做健康检查` |
 | [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
 | [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
 | [qmt-bridge-feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | 飞书云文档 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书` |
@@ -73,7 +98,8 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 ## 推荐工作流
 
 ```
-calendar → watchlist / sector-rank
+setup（安装/启动 Bridge）
+    → calendar → watchlist / sector-rank
     → download-financial → fundamental-screen
     → portfolio-risk → daily-pnl → execution-preview
     → trading → order-ops → daily-report
@@ -81,6 +107,7 @@ calendar → watchlist / sector-rank
 
 | 阶段 | 说明 | 提示词示例 |
 |------|------|------------|
+| 环境 | 先检测再按需安装/启动 Bridge | `检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动` |
 | 日历 | 是否交易日 | `今天是不是交易日` |
 | 强弱 | 持仓/阶段涨幅 | `评估持仓涨幅概率并总结明日策略` · `指定股票 N 日涨幅对比` |
 | 看盘 | 板块 | `板块内涨幅排名` |
