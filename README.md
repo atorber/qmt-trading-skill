@@ -6,26 +6,14 @@
 
 **在线文档**：[GitHub Pages](https://atorber.github.io/qmt-trading-skill/) · [快速开始](docs/getting-started.md) · [Agent Skills](docs/agent-skills.md) · [skills/README.md](skills/README.md)
 
-## 一键安装（豆包工作 / WorkBuddy）
+## 一键安装
 
-在 **豆包工作** 或 **WorkBuddy** 的对话里直接粘贴下面提示词，Agent 会自动拉取并安装本仓库的 Skills。
-
-### 豆包工作
+在 **豆包工作** 、 **WorkBuddy** 等agent的对话里直接粘贴下面提示词，Agent 会自动拉取并安装本仓库的 Skills。
 
 ```text
 帮我安装这个 skill：https://github.com/atorber/qmt-trading-skill
 请把仓库 skills/ 目录下的全部 Agent Skills 安装到当前环境（每个子目录一个 Skill，跳过 _shared）。
 安装完成后告诉我如何用自然语言查询持仓、当日盈亏和生成复盘。
-```
-
-也可走界面：电脑版进入「技能 · 连接器 · 伙伴」→「我的技能」→「新建 — 上传技能」，将本地 `skills/qmt-bridge-*` 目录拖入即可（豆包工作也会自动发现本机 `.agents/skills`、`.codex/skills`）。
-
-### WorkBuddy
-
-```text
-帮我安装这个 skill：https://github.com/atorber/qmt-trading-skill
-请安装 skills/ 下全部 Agent Skills 到 ~/.workbuddy/skills/（每个子目录一个 Skill，跳过 _shared）。
-安装完成后新建对话，用自然语言即可调用（例如「今天账户盈亏多少」）。
 ```
 
 ### 通用 CLI（可选）
