@@ -15,7 +15,7 @@
 |--------|-------|------|------|
 | P0 | [qmt-bridge-setup](qmt-bridge-setup/SKILL.md) | ✅ | 规程 + `bridge_health.py` |
 | P0 | [qmt-bridge-trading](qmt-bridge-trading/SKILL.md) | ✅ | `trading_status.py`, `place_order.py`, `liquidate.py` |
-| P0 | [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | ✅ | `daily_trade_report.py` |
+| P0 | [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | ✅ | 证据包 + `daily_trade_report` / `combined_trade_report`；三角色专家规程 |
 | P0 | [qmt-bridge-feishu-doc](qmt-bridge-feishu-doc/SKILL.md) | ✅ | 规程 + lark-cli（lark-doc / lark-drive） |
 | P0 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | ✅ | `portfolio_snapshot.py` |
 | P0 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | ✅ | `daily_pnl_snapshot.py` |

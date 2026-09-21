@@ -1,6 +1,10 @@
-# 交易观标准（操作评价依据）
+# 交易观标准（默认风格假设 / 规则标签来源）
 
-本文件为 **qmt-bridge-execution-review** 操作评价的规范来源。评价脚本 `execution_review_eval.py` 将下列原则量化为可检查项（统计归纳，非投资建议）。
+本文件为 **qmt-bridge-execution-review** 的**默认交易风格假设**。脚本将下列原则量化为 `rule_tags`（证据标签），**不**直接作为最终专家评语。
+
+- 阈值配置：[thresholds.yaml](thresholds.yaml)
+- 专家评语：Agent 按 [expert-review-protocol.md](expert-review-protocol.md) + 三角色 persona 基于 `daily_eval_evidence.json` 撰写
+- 实现：`_shared/trading_philosophy.py` + `execution_review_eval.py`
 
 ---
 
@@ -74,9 +78,9 @@
 |------|-------------|
 | 不操作基线 | `昨仓股数 × (收盘价 − 昨收)` |
 | 操作增量 | 当日实际盈亏 − 不操作基线 |
-| 总评加减分 | 以**操作增量合计**为主（≥5000 +1.2；&gt;0 +0.8；≤-5000 -1.6；否则 -1.1） |
-| 需改进触发 | 主动交易且单标的增量 &lt; -2000 元 |
+| 算法参考分加减 | 见 `thresholds.yaml` 中 `score_alpha_*`（仅 `score_hints`，展示以专家综合为准） |
+| 标签触发 | 主动交易且单标的增量低于 `op_alpha_improve_hint` → `op_alpha_negative` 等 |
 
 > **注意**：当日盈亏与操作增量可背离——例如标的大跌但日内买卖反而少亏，应分开解读。
 
-Agent 生成文字复盘时，应优先引用评价输出中的 **「交易观对照」**、**「戒律检查」** 与 **「不操作少赚/多亏明细」**（或 JSON 中 `op_alpha_pnl`）。
+Agent 生成专家复盘时，应优先引用证据包中的 **rule_tags**、**pnl.op_alpha_*** 与三角色规程；旧 `--eval-mode=rules` 仍输出模板「做得好的/需改进」。

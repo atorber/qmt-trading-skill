@@ -29,6 +29,7 @@ from common import (  # noqa: E402
     unwrap_data,
 )
 from execution_review_eval import (  # noqa: E402
+    build_evidence_pack,
     build_operation_evaluation,
     fetch_eval_market_context,
     fetch_market_turnover_history,
@@ -148,6 +149,20 @@ def main() -> int:
         metavar="PATH",
         help="导出飞书 Markdown 全文（默认 reports/feishu_daily_eval.md）",
     )
+    parser.add_argument(
+        "--eval-mode",
+        choices=("evidence", "rules"),
+        default="evidence",
+        help="evidence=事实+标签（默认，供专家评审）；rules=旧版模板评语",
+    )
+    parser.add_argument(
+        "--evidence-json",
+        nargs="?",
+        const="reports/daily_eval_evidence.json",
+        metavar="PATH",
+        help="导出证据包 JSON（默认 reports/daily_eval_evidence.json；"
+        "evidence 模式下未指定 --json/--feishu-md 时也会写入默认路径）",
+    )
     args = parser.parse_args()
 
     client, account_id = make_client(args)
@@ -244,7 +259,42 @@ def main() -> int:
             cumulative_3d_pct=cum3,
             index_avg_pct=index_avg,
             tick_map=tick_map,
+            eval_mode=args.eval_mode,
         )
+
+    evidence_path_str: str | None = None
+    if op_eval is not None and (
+        args.eval_mode == "evidence" or args.evidence_json is not None
+    ):
+        ev_rel = args.evidence_json or "reports/daily_eval_evidence.json"
+        ev_out = Path(ev_rel)
+        if not ev_out.is_absolute():
+            ev_out = _REPO / ev_out
+        trade_date = date.today().isoformat()
+        pack = build_evidence_pack(
+            trade_date=trade_date,
+            account_id=account_id,
+            health=health,
+            account_status=acct,
+            asset=asset if isinstance(asset, dict) else {},
+            orders=orders,
+            trades=trades,
+            name_map=name_map,
+            filled=filled,
+            cancelled=cancelled,
+            op_eval=op_eval,
+            combined=False,
+        )
+        ev_out.parent.mkdir(parents=True, exist_ok=True)
+        ev_out.write_text(
+            json.dumps(pack, ensure_ascii=False, indent=2, default=str),
+            encoding="utf-8",
+        )
+        try:
+            evidence_path_str = str(ev_out.relative_to(_REPO))
+        except ValueError:
+            evidence_path_str = str(ev_out)
+        print(f"已写入证据包: {ev_out}", file=sys.stderr)
 
     if args.feishu_md:
         out = Path(args.feishu_md)
@@ -266,6 +316,7 @@ def main() -> int:
             op_eval=op_eval,
             include_trades=not args.no_trades,
             include_summary=not args.no_summary,
+            evidence_path=evidence_path_str,
         )
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(md, encoding="utf-8")

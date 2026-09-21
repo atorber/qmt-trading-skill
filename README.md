@@ -26,6 +26,55 @@ npx skills add atorber/qmt-trading-skill -g -y
 
 安装 Skills 后，下一步是检测 / 按需启动 Bridge（见下方「使用」第 2 步），不要默认重复安装或重启已在跑的服务。
 
+## 版本
+
+| 项 | 位置 | 当前 |
+|----|------|------|
+| Skills 包版本 | [`skills/VERSION`](skills/VERSION) | **1.1.0** |
+| Python 包版本 | [`pyproject.toml`](pyproject.toml) `project.version` | 与上同步 |
+| 变更说明 | [`skills/CHANGELOG.md`](skills/CHANGELOG.md) | 按版本记录 |
+
+发版约定：改 Skill 行为或新增 Skill 时递增 `skills/VERSION` 与 `pyproject.toml`，并在 `CHANGELOG.md` 写一行；Git tag 建议 `v1.1.0`。Agent 更新后应能读到新的 `VERSION` 内容。
+
+## 更新 Skills（已安装用户）
+
+仓库有新版本时，**已安装**本 Skill 包的 Agent 需主动拉取覆盖，不会自动升级。
+
+### 对话一键更新（豆包工作 / WorkBuddy / Cursor 等）
+
+```text
+帮我把 qmt-trading-skill 更新到最新版：https://github.com/atorber/qmt-trading-skill
+请覆盖安装 skills/ 目录下的全部 Agent Skills（每个子目录一个 Skill，跳过 _shared）。
+更新后读取并告诉我 skills/VERSION 的内容，确认已是最新。
+```
+
+若 Agent 使用 `npx skills`，也可说：`用 npx skills update 更新 atorber/qmt-trading-skill，并核对 VERSION`。
+
+### 通用 CLI
+
+```bash
+# 检查是否有更新
+npx skills check
+
+# 更新全部已装 Skill（全局安装用 -g）
+npx skills update -g -y
+
+# 或强制重装本仓库（覆盖）
+npx skills add atorber/qmt-trading-skill -g -y
+```
+
+### 开发克隆（git）
+
+```powershell
+cd qmt-trading-skill
+git pull --recurse-submodules
+git submodule update --init --recursive
+# 核对版本
+Get-Content skills\VERSION
+```
+
+更新后**新开一轮对话**再触发 Skill，避免旧会话缓存旧规程。若本地改过某 Skill 文件，覆盖前请自行备份。
+
 ## 仓库职责
 
 | 仓库 | 内容 | 文档 |
@@ -82,7 +131,7 @@ Skills 装好后，在对话中说：
 |-------|--------|
 | [setup](skills/qmt-bridge-setup/SKILL.md) | `检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动` |
 | [trading](skills/qmt-bridge-trading/SKILL.md) | `帮我查持仓和可用资金` |
-| [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | `生成今日交易复盘并评价操作质量` |
+| [execution-review](skills/qmt-bridge-execution-review/SKILL.md) | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` |
 | [feishu-doc](skills/qmt-bridge-feishu-doc/SKILL.md) | `把今日复盘同步到飞书` |
 | [portfolio-risk](skills/qmt-bridge-portfolio-risk/SKILL.md) | `组合风险快照，看下持仓集中度` |
 | [daily-pnl](skills/qmt-bridge-daily-pnl/SKILL.md) | `今天账户盈亏多少` |

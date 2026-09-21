@@ -13,8 +13,11 @@ description: >-
 ## 目标
 
 1. 先由对应 QMT Skill 生成报告（复盘、盈亏等）
-2. **当日复盘**：`daily_trade_report.py --feishu-md` 导出 `reports/feishu_daily_eval.md`（**禁止** Agent 手写摘要）
-3. 用 **lark-doc** / **lark-drive**（`lark-cli docs +update` 等）写入飞书
+2. **当日复盘**：
+   - 脚本 `--feishu-md` 导出客观章节 + 证据包（**禁止**篡改一～六数字）
+   - Agent 按三角色规程写第七节专家评审（**禁止编造**；见 execution-review protocol）
+   - 合并后再用 **lark-doc** / **lark-drive** 写入飞书
+3. 其它报告类型仍用脚本/Skill 产物，禁止凭印象摘要
 
 ## lark-cli 首次使用（Agent）
 
@@ -57,7 +60,7 @@ doc token：`reports/feishu_doc_ids.json` 或 `FEISHU_*_DOC_ID`。
 
 ## 工作流：当日复盘
 
-详见 **[references/workflows/daily-eval-sync.md](references/workflows/daily-eval-sync.md)**。同步前必须先跑 `--feishu-md`。
+详见 **[references/workflows/daily-eval-sync.md](references/workflows/daily-eval-sync.md)**。同步前必须：脚本客观 MD + evidence → 三角色专家第七节 → 合并后再上传。
 
 **放置位置**
 

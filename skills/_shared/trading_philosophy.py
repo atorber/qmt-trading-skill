@@ -4,35 +4,37 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from review_thresholds import load_thresholds
+
+# 阈值来自 references/thresholds.yaml（缺失时用内置默认）
+_T = load_thresholds()
+
 # --- 量能（亿元，两市成交额，由调用方传入或 --market-turnover-yi）---
-TURNOVER_CAUTIOUS_MAX_YI = 10_000.0  # <1万亿
-TURNOVER_MODERATE_MAX_YI = 28_500.0  # 1～2.85万亿；≥2.85万亿才算高热区
+TURNOVER_CAUTIOUS_MAX_YI = _T["turnover_cautious_max_yi"]
+TURNOVER_MODERATE_MAX_YI = _T["turnover_moderate_max_yi"]
 
 # --- 止盈 / 低吸 / 追涨 ---
-TAKE_PROFIT_1D_PCT = 5.0  # 单日涨幅偏离大 → 宜分步止盈
-TAKE_PROFIT_3D_PCT = 8.0  # 近 3 交易日累计涨幅 → 宜分步止盈
-# 追涨/低吸：以**买入均价在当日振幅中的位置**为准，不用收盘涨跌幅
-# 位置 0≈当日低点、1≈当日高点；(high-low) 无效时回退昨收/开盘价启发式
-CHASE_RANGE_POSITION = 0.65  # 买入价处于振幅上段 → 追涨
-DIP_RANGE_POSITION = 0.40  # 买入价处于振幅下段 → 低吸
-# 买均价明显低于收盘价：说明买在拉升前/中低位，收盘大涨仍属低吸成功
-DIP_UPLIFT_FROM_BUY_PCT = 2.0  # (收盘-买均)/买均 ≥ 此值 → 偏低吸
-CHASE_NEAR_CLOSE_RATIO = 0.995  # 买均 ≥ 收盘×此比例 → 贴近尾盘追高
-DIP_BUY_PCT = -2.0  # 无振幅数据时：收盘大跌净买入
-STRONG_RISE_HOLD_PCT = 3.0  # 温和上涨未卖 → 可考虑分步止盈（非戒律）
-SUCCESS_DIP_CLOSE_PCT = 5.0  # 收盘大涨 + 低吸 → 正向「低吸成功」
+TAKE_PROFIT_1D_PCT = _T["take_profit_1d_pct"]
+TAKE_PROFIT_3D_PCT = _T["take_profit_3d_pct"]
+CHASE_RANGE_POSITION = _T["chase_range_position"]
+DIP_RANGE_POSITION = _T["dip_range_position"]
+DIP_UPLIFT_FROM_BUY_PCT = _T["dip_uplift_from_buy_pct"]
+CHASE_NEAR_CLOSE_RATIO = _T["chase_near_close_ratio"]
+DIP_BUY_PCT = _T["dip_buy_pct"]
+STRONG_RISE_HOLD_PCT = _T["strong_rise_hold_pct"]
+SUCCESS_DIP_CLOSE_PCT = _T["success_dip_close_pct"]
 
 # --- 组合聚焦 ---
-MAX_HOLDINGS_FOCUS = 6  # 超过提示做减法
-MAX_ACTIVE_TRADED_TODAY = 4  # 当日成交标的过多
-MIN_CASH_PCT_CAUTIOUS = 15.0
-MIN_CASH_PCT_MODERATE = 10.0
+MAX_HOLDINGS_FOCUS = int(_T["max_holdings_focus"])
+MAX_ACTIVE_TRADED_TODAY = int(_T["max_active_traded_today"])
+MIN_CASH_PCT_CAUTIOUS = _T["min_cash_pct_cautious"]
+MIN_CASH_PCT_MODERATE = _T["min_cash_pct_moderate"]
 
 # --- 执行 ---
-SLIPPAGE_WARN_BP = 30.0
-SLIPPAGE_SEVERE_BP = 100.0
-ORDER_COUNT_BUSY = 10
-CANCEL_COUNT_BUSY = 3
+SLIPPAGE_WARN_BP = _T["slippage_warn_bp"]
+SLIPPAGE_SEVERE_BP = _T["slippage_severe_bp"]
+ORDER_COUNT_BUSY = int(_T["order_count_busy"])
+CANCEL_COUNT_BUSY = int(_T["cancel_count_busy"])
 
 SECTORS = ("大金融", "消费", "周期", "科技")
 
@@ -167,9 +169,9 @@ class TurnoverDay:
 
 
 # 近 N 日量能环比阈值（%）
-HEAT_TREND_UP_PCT = 5.0
-HEAT_TREND_DOWN_PCT = -8.0
-HEAT_SPIKE_PULLBACK_PCT = -10.0  # 相对近段峰值回落
+HEAT_TREND_UP_PCT = _T["heat_trend_up_pct"]
+HEAT_TREND_DOWN_PCT = _T["heat_trend_down_pct"]
+HEAT_SPIKE_PULLBACK_PCT = _T["heat_spike_pullback_pct"]
 
 
 @dataclass

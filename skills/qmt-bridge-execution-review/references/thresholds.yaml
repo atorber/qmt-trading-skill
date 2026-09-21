@@ -1,0 +1,46 @@
+# 复盘规则阈值（算法标签 / 参考分用）
+# 修改后无需改代码；脚本启动时从本文件加载。
+# 单位说明见各注释。
+
+# 量能（亿元，两市成交额）
+turnover_cautious_max_yi: 10000
+turnover_moderate_max_yi: 28500
+
+# 止盈 / 低吸 / 追涨
+take_profit_1d_pct: 5.0
+take_profit_3d_pct: 8.0
+chase_range_position: 0.65
+dip_range_position: 0.40
+dip_uplift_from_buy_pct: 2.0
+chase_near_close_ratio: 0.995
+dip_buy_pct: -2.0
+strong_rise_hold_pct: 3.0
+success_dip_close_pct: 5.0
+
+# 组合聚焦
+max_holdings_focus: 6
+max_active_traded_today: 4
+min_cash_pct_cautious: 15.0
+min_cash_pct_moderate: 10.0
+
+# 执行
+slippage_warn_bp: 30.0
+slippage_severe_bp: 100.0
+order_count_busy: 10
+cancel_count_busy: 3
+
+# 近 N 日量能环比（%）
+heat_trend_up_pct: 5.0
+heat_trend_down_pct: -8.0
+heat_spike_pullback_pct: -10.0
+
+# 操作增量 / 模板亮点（元）— 仅 rules 模式叙事与参考分
+op_alpha_positive_hint: 2000
+op_alpha_improve_hint: -2000
+pnl_positive_large: 5000
+pnl_positive_mid: 3000
+score_alpha_large: 5000
+score_alpha_large_bonus: 1.2
+score_alpha_pos_bonus: 0.8
+score_alpha_large_penalty: -1.6
+score_alpha_neg_penalty: -1.1

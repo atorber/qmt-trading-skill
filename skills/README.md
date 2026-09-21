@@ -2,6 +2,8 @@
 
 本目录是 **QMT Trading Skill** 的 Agent Skills 层，通过 **QMT Bridge** HTTP API 执行行情与交易任务。[Agent Skills](https://docs.cursor.com/context/skills) 共 **23 个**，均已提供可执行脚本或规程（见 [ROADMAP.md](ROADMAP.md)）。
 
+**包版本**：[VERSION](VERSION)（当前见文件内容）· [CHANGELOG.md](CHANGELOG.md) · 已安装环境如何升级见 [README「更新 Skills」](../README.md#更新-skills已安装用户)
+
 在线文档：
 
 - **[QMT Trading Skill 文档（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)** — 快速开始、配置、Agent Skills
@@ -22,7 +24,7 @@
 |-------|------|------------|
 | [qmt-bridge-setup](qmt-bridge-setup/SKILL.md) | 安装/启动 Bridge | `检查 Bridge 是否已启动；未启动再安装启动` · `帮我安装并启动 QMT Bridge` · `Bridge 连不上，做健康检查` |
 | [qmt-bridge-trading](qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
-| [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | 当日复盘/操作评价（含不操作基线对比） | `今日操作评估` · `普通户+信用户综合复盘` · `列不操作少赚/多亏明细` · `评价今天买卖是否合理` |
+| [qmt-bridge-execution-review](qmt-bridge-execution-review/SKILL.md) | 当日复盘/三角色专家评价 | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` · `生成今日交易复盘（先出证据包）` · `列不操作少赚/多亏明细` |
 | [qmt-bridge-feishu-doc](qmt-bridge-feishu-doc/SKILL.md) | 上传报告到飞书 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书文档` |
 | [qmt-bridge-portfolio-risk](qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |

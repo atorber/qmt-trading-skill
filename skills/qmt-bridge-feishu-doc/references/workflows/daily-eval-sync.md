@@ -1,30 +1,29 @@
 # 当日复盘 → 飞书云文档
 
-**前置**：[lark-cli-setup.md](../lark-cli-setup.md)（安装、`config init`、`auth login`）。执行前读 **lark-shared**、**lark-doc**；知识库节点读 **lark-wiki**。
+**前置**：[lark-cli-setup.md](../lark-cli-setup.md)。执行前读 **lark-shared**、**lark-doc**；知识库节点读 **lark-wiki**。专家规程读 **qmt-bridge-execution-review** 的 [expert-review-protocol.md](../../../qmt-bridge-execution-review/references/expert-review-protocol.md)。
 
-## 固定流程（必读）
+## 固定流程
 
-执行「今日复盘 / 同步飞书」时 **必须** 按下列顺序，**禁止** Agent 手写或缩写 `reports/feishu_*.md`：
+1. **拉取客观报告 + 证据包**（脚本）
+2. **三角色专家评审**（Agent，基于 evidence JSON，写入 `*_expert.md` 并合并第七节）
+3. **新建或更新**飞书 docx（正文为合并后的 Markdown）
 
-1. **拉取 + 导出 Markdown**（一步完成，正文结构由脚本固定）
-2. **新建或更新** 飞书 docx（`lark-cli`，正文来自上一步文件）
-3. （可选）同步云空间列表标题、记入本地 doc id
+| 层级 | 规则 |
+|------|------|
+| 一～六（客观） | **必须**用脚本产物；禁止 Agent 手写/篡改数字 |
+| 七（专家） | **必须**基于 `*_evidence.json`；禁止编造；允许撰写评语 |
 
-正文丰富度与终端复盘一致（委托表、成交、按标的汇总、完整操作评价、**不操作基线对比明细**与交易观对照）。此前简版多因跳过 `--feishu-md`、由 Agent 摘要导致。
-
-## 1. 拉取复盘并导出 Markdown（QMT）
+## 1. 客观层：QMT 脚本
 
 **单账户**：
 
 ```bash
-cd <qmt-bridge 仓库根>
-
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \
   --host 127.0.0.1 --port 8080 --api-key KEY \
   --feishu-md
 ```
 
-**全账户综合**（普通户 + 信用户，推荐双账户场景）：
+**全账户综合**：
 
 ```bash
 python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py \
@@ -32,58 +31,55 @@ python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py \
   --feishu-md
 ```
 
-- 单账户 `--feishu-md` → `reports/feishu_daily_eval.md`
-- 综合 `--feishu-md` → `reports/feishu_combined_daily_eval.md`
-- `--feishu-md /path/to/custom.md`：指定路径
-- 可选：`--market-turnover-yi 12500`；QMT 日 K 异常时 `--no-philosophy-fetch`
-- 与 `--json` 可并存；**同步飞书前必须先有本步骤产物**
-- H1 / 云文档标题由 `feishu_doc.format_title` 生成，例：`# QMT Trading Skill 当日复盘 2026-05-22 14:30:00`
+产物：
 
-## 2. 正文来源（禁止手写）
+| 文件 | 说明 |
+|------|------|
+| `reports/feishu_daily_eval.md` / `feishu_combined_daily_eval.md` | 客观 MD（含第七节占位） |
+| `reports/daily_eval_evidence.json` / `combined_daily_eval_evidence.json` | 证据包（专家必读） |
 
-| ✅ 必须 | ❌ 禁止 |
-|--------|--------|
-| 使用 §1 生成的 `reports/feishu_daily_eval.md` 或 `reports/feishu_combined_daily_eval.md` | Agent 根据终端输出自行整理摘要 |
-| `docs +update --content @reports/feishu_….md` | 删减「五、当日操作评价」各小节（含基线对比表） |
+默认 `--eval-mode=evidence`。旧模板对比可用 `--eval-mode=rules`。
 
-章节结构（脚本固定）：
+## 2. 专家层：三角色评审
+
+```text
+用投顾/基金经理/交易员三角色做今日复盘并综合裁决。
+```
+
+1. 读 evidence JSON（禁止编造）
+2. 按 persona 写 7.1～7.3，再写 7.4 综合裁决
+3. 完整第七节写入：
+   - `reports/feishu_daily_eval_expert.md`（或 `feishu_combined_daily_eval_expert.md`）
+4. 用专家节**替换**客观 MD 中「## 七、专家评审」至文末说明之前的占位，保存回 `feishu_*_daily_eval.md`
+
+章节结构：
 
 1. 统计概览  
-2. 当日委托（表格 + 滑点）  
+2. 当日委托  
 3. 当日成交  
-4. 按标的成交汇总  
-5. 当日操作评价（**基线对比**、**不操作少赚/多亏明细**、交易观、分标的、明日纪律等）
+4. 按标的汇总  
+5. 盈亏与不操作基线（客观）  
+6. 规则标签与算法参考分  
+7. 专家评审（投顾 / 基金经理 / 交易员 / 综合裁决）
 
 ## 3. 放置位置（Agent 决策）
 
 | 用户意图 | 做法 |
 |----------|------|
-| **未指定父文档/目录**（默认） | 在**知识库根**新建节点（见 §4A） |
-| **给出飞书 wiki 父页面 URL 或 token** | 在该父节点下新建子文档（见 §4B） |
-| **要求云空间「每日复盘」文件夹** | `docs +create --folder-token`（见 §4C） |
-| **要求覆盖已有某篇** | 仅 `docs +update`（§5），不新建节点 |
+| **未指定父文档/目录**（默认） | 知识库根新建（§4A） |
+| **给出 wiki 父页面** | 父节点下新建（§4B） |
+| **云空间「每日复盘」文件夹** | `docs +create --folder-token`（§4C） |
+| **覆盖已有** | 仅 `docs +update`（§5） |
 
-**不要**在未获用户指定时，擅自使用历史对话里的某个 `parent_node_token`。
+**不要**在未获用户指定时擅自使用历史 `parent_node_token`。
 
-父节点 token 解析：
-
-- URL `https://<host>/wiki/<TOKEN>` → `--parent-node-token <TOKEN>`
-- 或 `lark-cli wiki +node-get --token "<URL或TOKEN>" --as user` 核对标题
-
-可选配置（本地，非默认）：
-
-- 环境变量 `FEISHU_DAILY_EVAL_WIKI_PARENT_TOKEN`
-- `reports/feishu_doc_ids.json` 的 `daily-eval-wiki-parent`
-
-仅当用户**未**在对话中指定父文档、但希望长期固定父节点时，才读上述配置。
+可选：`FEISHU_DAILY_EVAL_WIKI_PARENT_TOKEN` / `feishu_doc_ids.json` 的 `daily-eval-wiki-parent`。
 
 ## 4. 新建文档
 
-标题与 Markdown H1 一致（可从 `reports/feishu_daily_eval.md` 首行 `# ...` 读取）。
+标题与 Markdown H1 一致。
 
-### 4A. 默认：知识库根（推荐按次新建）
-
-`user` 身份下**不传** `--parent-node-token` 时，`wiki +node-create` 落在**个人知识库根**（`my_library`）。
+### 4A. 知识库根
 
 ```bash
 lark-cli wiki +node-create --as user \
@@ -94,9 +90,7 @@ lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
   --content @reports/feishu_daily_eval.md
 ```
 
-返回字段：`obj_token`（docx）、`node_token`（wiki 入口 URL 用此 token）。
-
-### 4B. 用户指定：某 wiki 父页面下的子文档
+### 4B. 指定 wiki 父页
 
 ```bash
 lark-cli wiki +node-create --as user \
@@ -108,7 +102,7 @@ lark-cli docs +update --api-version v2 --doc OBJ_TOKEN --as user \
   --content @reports/feishu_daily_eval.md
 ```
 
-### 4C. 云空间子目录（Drive 文件夹）
+### 4C. 云空间文件夹
 
 ```bash
 lark-cli docs +create --api-version v2 --doc-format markdown --as user \
@@ -117,23 +111,15 @@ lark-cli docs +create --api-version v2 --doc-format markdown --as user \
   --content @reports/feishu_daily_eval.md
 ```
 
-## 5. 滚动更新（覆盖已有 docx）
-
-`DOC_TOKEN` ← `reports/feishu_doc_ids.json` 的 `daily-eval` 或 `FEISHU_DAILY_EVAL_DOC_ID`。
+## 5. 滚动更新
 
 ```bash
-# 先 §1 重新导出 Markdown，再更新
+# 先 §1～§2 更新本地 MD，再：
 lark-cli docs +update --api-version v2 --doc DOC_TOKEN --as user \
   --command overwrite --doc-format markdown \
   --content @reports/feishu_daily_eval.md
 ```
 
-预览：加 `--dry-run`。
+## 6～7. 列表标题与本地记录
 
-## 6. 同步云空间列表标题
-
-与 H1 相同。按 **lark-drive** Skill：`drive files patch`（`type=docx`，`new_title` 为 H1 文本）。
-
-## 7. 本地记录（可选）
-
-按次新建后，可将 `obj_token` / `node_token` 记入 `reports/feishu_wiki_daily_eval.json` 或 `feishu_doc_ids.json`，供下次滚动更新。**勿将真实 token 提交 git**（`reports/` 已 ignore）。
+同前：按 **lark-drive** 同步标题；token 记入 `reports/feishu_doc_ids.json`（勿提交 git）。

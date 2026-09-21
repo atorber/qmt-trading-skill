@@ -38,4 +38,6 @@
 2. **检测 Bridge**：已启动则跳过；未启动再安装/启动（见 [qmt-bridge-setup](../skills/qmt-bridge-setup/SKILL.md)）
 3. **自然语言使用**，例如 `今天账户盈亏多少`
 
+已安装用户升级：见 [快速开始 · 更新已安装的 Skills](getting-started.md#更新已安装的-skills)；包版本 [`skills/VERSION`](../skills/VERSION)。
+
 详情见 [快速开始](getting-started.md)。

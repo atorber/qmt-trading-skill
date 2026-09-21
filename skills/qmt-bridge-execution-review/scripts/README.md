@@ -5,36 +5,35 @@
 ```bash
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --json --api-key KEY
-python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY --feishu-md
+python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --feishu-md
 ```
 
-默认飞书 Markdown：`reports/feishu_daily_eval.md`
+默认：`--eval-mode=evidence` → `reports/daily_eval_evidence.json` + `reports/feishu_daily_eval.md`（一～六客观，七专家占位）。
 
-## 全账户综合（普通户 + 信用户）
+## 全账户综合
 
 ```bash
-python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY
-python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --json --api-key KEY
-python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --host 127.0.0.1 --port 8080 --api-key KEY --feishu-md
+python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py --feishu-md
 ```
 
-默认飞书 Markdown：`reports/feishu_combined_daily_eval.md`
+证据包：`reports/combined_daily_eval_evidence.json`；MD：`reports/feishu_combined_daily_eval.md`。
 
-需在 `.env` 配置 `QMT_BRIDGE_STOCK_ACCOUNT_ID` / `QMT_BRIDGE_CREDIT_ACCOUNT_ID`（或等价变量）。
+## 参数
 
-## 共用说明
+| 参数 | 说明 |
+|------|------|
+| `--eval-mode evidence\|rules` | 默认 evidence；rules=旧模板评语 |
+| `--evidence-json [PATH]` | 证据包路径 |
+| `--feishu-md` | 客观 Markdown |
+| `--json` | stdout（含 `rule_tags`、`score_hints`） |
 
-- `--json` 的 `operation_evaluation` 含 `no_trade_total_pnl`、`op_alpha_total_pnl` 及分标的 `no_trade_pnl` / `op_alpha_pnl`
-- `--feishu-md` 第五节含 **基线对比** 与 **不操作少赚/多亏明细** 表
-- 默认自动拉取当日两市成交额与近 3 日量能热度（`market_turnover_util`）；可用 `--market-turnover-yi` 覆盖。历史缺口见 `qmt-bridge-kline-backfill`
+专家第七节：Agent 读 evidence，按 `references/expert-review-protocol.md` 写入 `feishu_*_expert.md` 后合并。
 
-## 定时调度（收盘自动复盘 + 飞书）
-
-不依赖 Windows 任务计划，前台常驻：
+## 定时调度
 
 ```bash
-python scripts/daily_eval_scheduler.py          # 默认每交易日 15:10
-python scripts/daily_eval_scheduler.py --run-now  # 立即执行一次
+python scripts/daily_eval_scheduler.py
+python scripts/daily_eval_scheduler.py --run-now
 ```
 
-Windows：`scripts\daily_eval_scheduler.bat`。配置见 `.env` 中 `DAILY_EVAL_SCHEDULE_*`、`FEISHU_DAILY_EVAL_WIKI_PARENT_TOKEN`。
+Windows：`scripts\daily_eval_scheduler.bat`。

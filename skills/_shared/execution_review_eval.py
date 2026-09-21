@@ -6,15 +6,18 @@ from dataclasses import dataclass, field
 
 from orders_util import slippage_bps
 from pnl_util import DailyPnlBreakdown
+from review_thresholds import thr, thresholds_snapshot
 from trading_fmt import order_side, pick
 from trading_philosophy import (
     IntradayRange,
     PhilosophyCheckResult,
     SLIPPAGE_SEVERE_BP,
+    SLIPPAGE_WARN_BP,
     TurnoverDay,
     apply_trading_philosophy,
     buy_position_in_range,
     classify_buy_timing,
+    classify_sector,
     intraday_from_tick,
 )
 
@@ -57,6 +60,8 @@ class DailyOperationEval:
     discipline_tips: list[str] = field(default_factory=list)
     philosophy: PhilosophyCheckResult | None = None
     stocks: list[StockOpEval] = field(default_factory=list)
+    eval_mode: str = "evidence"  # evidence | rules
+    rule_tags: list[dict] = field(default_factory=list)
 
 
 # 两市成交额：上证指数 + 深证市场（综指优先，深成指兜底）
@@ -235,7 +240,7 @@ def _analyze_orders(orders: list[dict], name_map: dict[str, str]) -> list[str]:
         side = order_side(pick(o, "order_type", "m_nOrderType"))
         code = pick(o, "stock_code", "m_strStockCode", default="")
         bps = slippage_bps(price, tprice, side)
-        if bps is not None and abs(bps) >= 30:
+        if bps is not None and abs(bps) >= SLIPPAGE_WARN_BP:
             sym = name_map.get(code, code)
             bad_slips.append(f"{sym} {side} {bps:+.1f}bp")
             if abs(bps) >= SLIPPAGE_SEVERE_BP:
@@ -259,12 +264,23 @@ def build_operation_evaluation(
     cumulative_3d_pct: dict[str, float | None] | None = None,
     index_avg_pct: float | None = None,
     tick_map: dict[str, dict] | None = None,
+    eval_mode: str = "evidence",
 ) -> DailyOperationEval:
-    """生成当日操作评价（统计归纳，非投资建议）。"""
+    """生成当日操作评价。
+
+    eval_mode:
+      - evidence（默认）：事实 + rule_tags + 算法参考分；模板叙事留给 Agent 专家评审
+      - rules：保留旧版「做得好的/需改进/纪律提示」模板句
+    """
+    mode = (eval_mode or "evidence").strip().lower()
+    if mode not in ("evidence", "rules"):
+        mode = "evidence"
+
     result = DailyOperationEval(
         order_count=len(orders),
         cancelled_count=cancelled_count,
         trade_count=len(trades),
+        eval_mode=mode,
     )
 
     if isinstance(asset, dict):
@@ -333,46 +349,50 @@ def build_operation_evaluation(
         key=lambda s: (s.daily_pnl is None, -(s.daily_pnl or 0)),
     )
 
-    # 做得好的
-    for s in result.stocks:
-        traded = s.buy_volume > 0 or s.sell_volume > 0
-        if traded and s.op_alpha_pnl is not None and s.op_alpha_pnl > 2000:
-            result.positives.append(
-                f"{_sym(s)}：操作相对不操作多赚 {_fmt_pnl(s.op_alpha_pnl)}（{s.operation_label}）"
-            )
-        elif s.daily_pnl is not None and s.daily_pnl > 5000 and s.sell_volume > s.buy_volume:
-            result.positives.append(
-                f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}，{s.operation_label}（卖{s.sell_volume}/买{s.buy_volume}）"
-            )
-        elif s.daily_pnl is not None and s.daily_pnl > 3000 and s.operation_label in (
-            "顺势加仓",
-            "低吸加仓",
-        ):
-            result.positives.append(
-                f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}，{s.operation_label}"
-            )
+    alpha_pos = thr("op_alpha_positive_hint")
+    alpha_neg = thr("op_alpha_improve_hint")
+    pnl_large = thr("pnl_positive_large")
+    pnl_mid = thr("pnl_positive_mid")
 
-    # 需改进（仅对有主动交易的标的）
-    for s in result.stocks:
-        traded = s.buy_volume > 0 or s.sell_volume > 0
-        if not traded:
-            if s.daily_pnl is not None and s.daily_pnl > 5000 and (s.pct_chg or 0) >= 3:
+    if mode == "rules":
+        for s in result.stocks:
+            traded = s.buy_volume > 0 or s.sell_volume > 0
+            if traded and s.op_alpha_pnl is not None and s.op_alpha_pnl > alpha_pos:
                 result.positives.append(
-                    f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}（{s.pct_chg:+.2f}%），持股浮盈未调仓"
+                    f"{_sym(s)}：操作相对不操作多赚 {_fmt_pnl(s.op_alpha_pnl)}（{s.operation_label}）"
                 )
-            continue
-        if s.op_alpha_pnl is not None and s.op_alpha_pnl < -2000:
-            result.improvements.append(
-                f"{_sym(s)}：操作相对不操作少赚/多亏 {_fmt_pnl(s.op_alpha_pnl)}，{s.operation_label} — {s.watch_note}"
-            )
-        elif s.daily_pnl is not None and s.daily_pnl < -2000:
-            result.improvements.append(
-                f"{_sym(s)}：当日{_fmt_pnl(s.daily_pnl)}，{s.operation_label} — {s.watch_note}"
-            )
-        elif s.operation_label == "逆势加仓" and s.buy_volume >= 200:
-            result.improvements.append(
-                f"{_sym(s)}：逆势加仓 {s.buy_volume} 股（昨{s.yesterday_volume}→今{s.current_volume}），{s.watch_note}"
-            )
+            elif s.daily_pnl is not None and s.daily_pnl > pnl_large and s.sell_volume > s.buy_volume:
+                result.positives.append(
+                    f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}，{s.operation_label}（卖{s.sell_volume}/买{s.buy_volume}）"
+                )
+            elif s.daily_pnl is not None and s.daily_pnl > pnl_mid and s.operation_label in (
+                "顺势加仓",
+                "低吸加仓",
+            ):
+                result.positives.append(
+                    f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}，{s.operation_label}"
+                )
+
+        for s in result.stocks:
+            traded = s.buy_volume > 0 or s.sell_volume > 0
+            if not traded:
+                if s.daily_pnl is not None and s.daily_pnl > pnl_large and (s.pct_chg or 0) >= 3:
+                    result.positives.append(
+                        f"{_sym(s)}：{_fmt_pnl(s.daily_pnl)}（{s.pct_chg:+.2f}%），持股浮盈未调仓"
+                    )
+                continue
+            if s.op_alpha_pnl is not None and s.op_alpha_pnl < alpha_neg:
+                result.improvements.append(
+                    f"{_sym(s)}：操作相对不操作少赚/多亏 {_fmt_pnl(s.op_alpha_pnl)}，{s.operation_label} — {s.watch_note}"
+                )
+            elif s.daily_pnl is not None and s.daily_pnl < alpha_neg:
+                result.improvements.append(
+                    f"{_sym(s)}：当日{_fmt_pnl(s.daily_pnl)}，{s.operation_label} — {s.watch_note}"
+                )
+            elif s.operation_label == "逆势加仓" and s.buy_volume >= 200:
+                result.improvements.append(
+                    f"{_sym(s)}：逆势加仓 {s.buy_volume} 股（昨{s.yesterday_volume}→今{s.current_volume}），{s.watch_note}"
+                )
 
     if cancelled_count > 0:
         result.execution_notes.append(
@@ -388,18 +408,17 @@ def build_operation_evaluation(
             )
 
     score = 7.0
-    # 核心评分改为“操作后 vs 不操作基线”的增量价值（alpha）
+    score_large = thr("score_alpha_large")
     if result.op_alpha_total_pnl is not None:
-        if result.op_alpha_total_pnl >= 5000:
-            score += 1.2
+        if result.op_alpha_total_pnl >= score_large:
+            score += thr("score_alpha_large_bonus")
         elif result.op_alpha_total_pnl > 0:
-            score += 0.8
-        elif result.op_alpha_total_pnl <= -5000:
-            score -= 1.6
+            score += thr("score_alpha_pos_bonus")
+        elif result.op_alpha_total_pnl <= -score_large:
+            score += thr("score_alpha_large_penalty")
         else:
-            score -= 1.1
+            score += thr("score_alpha_neg_penalty")
     elif result.total_daily_pnl is not None:
-        # 基线不可得时退化到旧逻辑
         if result.total_daily_pnl > 0:
             score += 1.0
         else:
@@ -414,7 +433,7 @@ def build_operation_evaluation(
     )
     if neg_ops >= 2:
         score -= 0.5
-    if len(result.positives) >= 2:
+    if mode == "rules" and len(result.positives) >= 2:
         score += 0.5
     if any("滑点偏大" in n for n in result.execution_notes):
         score -= 0.5
@@ -477,8 +496,238 @@ def build_operation_evaluation(
     else:
         result.summary_line = "当日合计亏损，宜复盘买卖节奏与仓位纪律"
 
-    result.discipline_tips = _discipline_tips(result, phil)
+    result.rule_tags = build_rule_tags(result, cumulative_3d_pct or {})
+    if mode == "rules":
+        result.discipline_tips = _discipline_tips(result, phil)
     return result
+
+
+def build_rule_tags(
+    ev: DailyOperationEval,
+    cumulative_3d_pct: dict[str, float | None] | None = None,
+) -> list[dict]:
+    """将规则命中降级为可解释标签（非最终评语）。"""
+    tags: list[dict] = []
+    cum3 = cumulative_3d_pct or {}
+    phil = ev.philosophy
+
+    if phil and phil.volume_zone:
+        tags.append(
+            {
+                "tag": "volume_zone",
+                "label": phil.volume_zone.label,
+                "detail": phil.volume_zone.guidance,
+            }
+        )
+    if phil and phil.market_heat_label:
+        tags.append(
+            {
+                "tag": "market_heat",
+                "label": phil.market_heat_label,
+                "detail": phil.market_heat_summary or "",
+            }
+        )
+
+    for s in ev.stocks:
+        code = s.stock_code
+        traded = s.buy_volume > 0 or s.sell_volume > 0
+        sector = classify_sector(code, s.stock_name)
+        base = {
+            "stock_code": code,
+            "stock_name": s.stock_name,
+            "sector": sector,
+            "operation_label": s.operation_label,
+        }
+        if s.operation_label == "追涨加仓":
+            tags.append({**base, "tag": "chase_buy_candidate", "detail": s.watch_note})
+        if s.operation_label == "低吸加仓":
+            tags.append({**base, "tag": "dip_buy_candidate", "detail": s.watch_note})
+        if s.operation_label == "逆势加仓":
+            tags.append({**base, "tag": "counter_trend_buy", "detail": s.watch_note})
+        if s.operation_label == "大涨止盈":
+            tags.append({**base, "tag": "take_profit_sell", "detail": s.watch_note})
+        if (
+            s.pct_chg is not None
+            and s.pct_chg >= thr("take_profit_1d_pct")
+            and s.sell_volume == 0
+            and s.buy_volume == 0
+        ):
+            tags.append(
+                {
+                    **base,
+                    "tag": "take_profit_gap_1d",
+                    "detail": f"单日 {s.pct_chg:+.1f}% 未卖出",
+                }
+            )
+        c3 = cum3.get(code)
+        if (
+            c3 is not None
+            and c3 >= thr("take_profit_3d_pct")
+            and s.sell_volume == 0
+            and s.buy_volume == 0
+        ):
+            tags.append(
+                {
+                    **base,
+                    "tag": "take_profit_gap_3d",
+                    "detail": f"近3日累计约 +{c3:.1f}% 未分步止盈",
+                }
+            )
+        if traded and s.op_alpha_pnl is not None and s.op_alpha_pnl < thr("op_alpha_improve_hint"):
+            tags.append(
+                {
+                    **base,
+                    "tag": "op_alpha_negative",
+                    "detail": f"操作增量 {_fmt_pnl(s.op_alpha_pnl)}",
+                    "op_alpha_pnl": s.op_alpha_pnl,
+                }
+            )
+        if traded and s.op_alpha_pnl is not None and s.op_alpha_pnl > thr("op_alpha_positive_hint"):
+            tags.append(
+                {
+                    **base,
+                    "tag": "op_alpha_positive",
+                    "detail": f"操作增量 {_fmt_pnl(s.op_alpha_pnl)}",
+                    "op_alpha_pnl": s.op_alpha_pnl,
+                }
+            )
+        if s.range_position is not None:
+            tags.append(
+                {
+                    **base,
+                    "tag": "buy_range_position",
+                    "detail": f"买入均价振幅位置 {s.range_position:.2f}",
+                    "range_position": s.range_position,
+                }
+            )
+
+    if phil:
+        for v in phil.violations:
+            tags.append({"tag": "rule_violation", "detail": v})
+        for a in phil.aligned:
+            tags.append({"tag": "rule_aligned", "detail": a})
+
+    for note in ev.execution_notes:
+        if "滑点" in note:
+            tags.append({"tag": "slippage_warn", "detail": note})
+        if "撤" in note:
+            tags.append({"tag": "cancel_busy", "detail": note})
+
+    holding_n = len(ev.stocks)
+    traded_n = sum(1 for s in ev.stocks if s.buy_volume > 0 or s.sell_volume > 0)
+    if holding_n > int(thr("max_holdings_focus")):
+        tags.append(
+            {
+                "tag": "holdings_scattered",
+                "detail": f"持仓 {holding_n} 只",
+            }
+        )
+    if traded_n > int(thr("max_active_traded_today")):
+        tags.append(
+            {
+                "tag": "trade_scattered",
+                "detail": f"当日成交标的 {traded_n} 只",
+            }
+        )
+    return tags
+
+
+def build_evidence_pack(
+    *,
+    trade_date: str,
+    account_id: str | None,
+    health,
+    account_status,
+    asset: dict | None,
+    orders: list[dict],
+    trades: list[dict],
+    name_map: dict[str, str],
+    filled: int,
+    cancelled: int,
+    op_eval: DailyOperationEval,
+    combined: bool = False,
+) -> dict:
+    """稳定契约：供 Agent 三角色专家评审（禁止编造数字，须引用本包）。"""
+    phil = op_eval.philosophy
+    cash_pct = None
+    if op_eval.cash is not None and op_eval.total_asset and op_eval.total_asset > 0:
+        cash_pct = round(op_eval.cash / op_eval.total_asset * 100, 2)
+
+    return {
+        "schema_version": 1,
+        "meta": {
+            "trade_date": trade_date,
+            "account_id": account_id,
+            "combined": combined,
+            "health": health,
+            "account_status": account_status,
+            "eval_mode": op_eval.eval_mode,
+        },
+        "execution": {
+            "order_count": len(orders),
+            "filled_count": filled,
+            "cancelled_count": cancelled,
+            "trade_count": len(trades),
+            "orders": orders,
+            "trades": trades,
+            "execution_notes": op_eval.execution_notes,
+        },
+        "pnl": {
+            "total_daily_pnl": op_eval.total_daily_pnl,
+            "no_trade_total_pnl": op_eval.no_trade_total_pnl,
+            "op_alpha_total_pnl": op_eval.op_alpha_total_pnl,
+            "total_asset": op_eval.total_asset,
+            "cash": op_eval.cash,
+            "cash_pct": cash_pct,
+            "stocks": [
+                {
+                    "stock_code": s.stock_code,
+                    "stock_name": s.stock_name,
+                    "daily_pnl": s.daily_pnl,
+                    "pct_chg": s.pct_chg,
+                    "buy_volume": s.buy_volume,
+                    "sell_volume": s.sell_volume,
+                    "yesterday_volume": s.yesterday_volume,
+                    "current_volume": s.current_volume,
+                    "operation_label": s.operation_label,
+                    "watch_note": s.watch_note,
+                    "buy_avg": s.buy_avg,
+                    "range_position": s.range_position,
+                    "no_trade_pnl": s.no_trade_pnl,
+                    "op_alpha_pnl": s.op_alpha_pnl,
+                    "sector": classify_sector(s.stock_code, s.stock_name),
+                }
+                for s in op_eval.stocks
+            ],
+        },
+        "market": {
+            "market_turnover_yi": phil.market_turnover_yi if phil else None,
+            "volume_zone": phil.volume_zone.label if phil and phil.volume_zone else None,
+            "volume_note": phil.volume_note if phil else "",
+            "market_heat_label": phil.market_heat_label if phil else "",
+            "market_heat_summary": phil.market_heat_summary if phil else "",
+            "sector_summary": phil.sector_summary if phil else "",
+            "turnover_history": [
+                {
+                    "trade_date": d.trade_date,
+                    "turnover_yi": d.turnover_yi,
+                    "zone_label": d.zone_label,
+                }
+                for d in (phil.turnover_history if phil else [])
+            ],
+        },
+        "rule_tags": op_eval.rule_tags,
+        "score_hints": {
+            "algorithmic_only": True,
+            "overall_score": op_eval.overall_score,
+            "overall_grade": op_eval.overall_grade,
+            "summary_line": op_eval.summary_line,
+            "note": "展示以专家综合裁决为准；本分为规则参考分",
+        },
+        "thresholds": thresholds_snapshot(),
+        "stock_names": name_map,
+        "disclaimer": "统计归纳与规则标签，非投资建议；专家评语须引用本证据包字段，禁止编造数字。",
+    }
 
 
 def _discipline_tips(
@@ -558,10 +807,17 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
     lines = [
         "",
         "=" * 60,
-        "【当日操作评价】（统计归纳，非投资建议；对照交易观）",
+        "【当日客观复盘】（事实 + 规则标签；专家评语见 Agent 三角色规程）"
+        if ev.eval_mode == "evidence"
+        else "【当日操作评价】（统计归纳，非投资建议；对照交易观）",
         "=" * 60,
-        f"总评 {ev.overall_score}/10（{ev.overall_grade}） · {ev.summary_line}",
     ]
+    if ev.eval_mode == "evidence":
+        lines.append(
+            f"算法参考分 {ev.overall_score}/10（{ev.overall_grade}，algorithmic_only） · {ev.summary_line}"
+        )
+    else:
+        lines.append(f"总评 {ev.overall_score}/10（{ev.overall_grade}） · {ev.summary_line}")
     if ev.total_daily_pnl is not None:
         lines.append(f"当日盈亏合计（估算）：{_fmt_pnl(ev.total_daily_pnl)}")
     if (
@@ -581,7 +837,7 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
 
     if ev.philosophy:
         p = ev.philosophy
-        lines.append("\n▸ 交易观对照")
+        lines.append("\n▸ 市场与板块（客观）")
         if p.sector_summary:
             lines.append(f"  · {p.sector_summary}")
         if p.volume_zone:
@@ -591,30 +847,43 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
         if p.market_heat_summary:
             label = f"【{p.market_heat_label}】" if p.market_heat_label else ""
             lines.append(f"  · 近3日市场热度{label}：{p.market_heat_summary}")
-        for a in p.aligned:
-            lines.append(f"  · ✓ {a}")
+        if ev.eval_mode == "rules":
+            for a in p.aligned:
+                lines.append(f"  · ✓ {a}")
 
-    if ev.positives:
-        lines.append("\n▸ 做得好的")
-        for p in ev.positives:
-            lines.append(f"  · {p}")
+    if ev.eval_mode == "evidence" and ev.rule_tags:
+        lines.append("\n▸ 规则标签（供专家解释，非定罪）")
+        for t in ev.rule_tags[:40]:
+            tag = t.get("tag", "")
+            detail = t.get("detail", "")
+            code = t.get("stock_code", "")
+            prefix = f"{code} " if code else ""
+            lines.append(f"  · [{tag}] {prefix}{detail}".rstrip())
+        if len(ev.rule_tags) > 40:
+            lines.append(f"  · …共 {len(ev.rule_tags)} 条，完整见 evidence.json")
 
-    if ev.philosophy and ev.philosophy.violations:
-        lines.append("\n▸ 戒律检查（需改进）")
-        for v in ev.philosophy.violations:
-            lines.append(f"  · {v}")
+    if ev.eval_mode == "rules":
+        if ev.positives:
+            lines.append("\n▸ 做得好的")
+            for p in ev.positives:
+                lines.append(f"  · {p}")
 
-    if ev.improvements:
-        lines.append("\n▸ 需改进")
-        for p in ev.improvements:
-            lines.append(f"  · {p}")
+        if ev.philosophy and ev.philosophy.violations:
+            lines.append("\n▸ 戒律检查（需改进）")
+            for v in ev.philosophy.violations:
+                lines.append(f"  · {v}")
+
+        if ev.improvements:
+            lines.append("\n▸ 需改进")
+            for p in ev.improvements:
+                lines.append(f"  · {p}")
 
     if ev.execution_notes:
         lines.append("\n▸ 执行质量")
         for p in ev.execution_notes:
             lines.append(f"  · {p}")
 
-    if ev.philosophy and ev.philosophy.discipline:
+    if ev.eval_mode == "rules" and ev.philosophy and ev.philosophy.discipline:
         lines.append("\n▸ 纪律提示（交易观）")
         for d in ev.philosophy.discipline:
             lines.append(f"  · {d}")
@@ -629,19 +898,30 @@ def format_operation_evaluation(ev: DailyOperationEval) -> str:
                 f"买{s.buy_volume}/卖{s.sell_volume} | 仓 {s.yesterday_volume}→{s.current_volume}"
             )
 
-    if ev.discipline_tips:
+    if ev.eval_mode == "rules" and ev.discipline_tips:
         lines.append("\n▸ 明日纪律提示")
         for t in ev.discipline_tips:
             lines.append(f"  · {t}")
+    elif ev.eval_mode == "evidence":
+        lines.append(
+            "\n▸ 下一步：按 references/expert-review-protocol.md "
+            "用投顾/基金经理/交易员三角色基于 evidence.json 写专家复盘"
+        )
     lines.append("")
     return "\n".join(lines)
 
 
 def operation_eval_to_dict(ev: DailyOperationEval) -> dict:
     return {
+        "eval_mode": ev.eval_mode,
         "overall_score": ev.overall_score,
         "overall_grade": ev.overall_grade,
         "summary_line": ev.summary_line,
+        "score_hints": {
+            "algorithmic_only": True,
+            "overall_score": ev.overall_score,
+            "overall_grade": ev.overall_grade,
+        },
         "total_daily_pnl": ev.total_daily_pnl,
         "total_asset": ev.total_asset,
         "cash": ev.cash,
@@ -652,6 +932,7 @@ def operation_eval_to_dict(ev: DailyOperationEval) -> dict:
         "improvements": ev.improvements,
         "execution_notes": ev.execution_notes,
         "discipline_tips": ev.discipline_tips,
+        "rule_tags": ev.rule_tags,
         "philosophy": _philosophy_to_dict(ev.philosophy),
         "stocks": [
             {
@@ -665,6 +946,8 @@ def operation_eval_to_dict(ev: DailyOperationEval) -> dict:
                 "current_volume": s.current_volume,
                 "operation_label": s.operation_label,
                 "watch_note": s.watch_note,
+                "buy_avg": s.buy_avg,
+                "range_position": s.range_position,
                 "no_trade_pnl": s.no_trade_pnl,
                 "op_alpha_pnl": s.op_alpha_pnl,
             }

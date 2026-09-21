@@ -25,7 +25,7 @@ Windows 终端中文乱码：`chcp 65001` 或 `set PYTHONIOENCODING=utf-8`。
 |-------|--------|
 | [setup](../skills/qmt-bridge-setup/SKILL.md) | `检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动` |
 | [trading](../skills/qmt-bridge-trading/SKILL.md) | `帮我查持仓和可用资金` |
-| [execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | `生成今日交易复盘并评价操作质量` |
+| [execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` |
 | [feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | `把今日复盘同步到飞书` |
 | [portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | `组合风险快照，看下持仓集中度` |
 | [daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | `今天账户盈亏多少` |
@@ -70,7 +70,7 @@ python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py --host 1
 |-------|------|------------|
 | [qmt-bridge-setup](../skills/qmt-bridge-setup/SKILL.md) | 安装/启动 Bridge | `检查 Bridge 是否已启动；未启动再安装启动` · `帮我安装并启动 QMT Bridge` · `Bridge 连不上，做健康检查` |
 | [qmt-bridge-trading](../skills/qmt-bridge-trading/SKILL.md) | 下单、清仓、状态 | `帮我查持仓和可用资金` · `用 Bridge 下一笔买入（先预览）` · `清仓某只股票` |
-| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/操作评价 | `今日操作评估` · `交易复盘+执行质量` · `评价今天买卖是否合理` |
+| [qmt-bridge-execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | 复盘/三角色专家 | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` · `生成今日交易复盘（先出证据包）` · `列不操作少赚/多亏明细` |
 | [qmt-bridge-feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | 飞书云文档 | `把今日复盘同步到飞书` · `上传涨跌分析到飞书` |
 | [qmt-bridge-portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | 组合风险 | `组合风险快照` · `持仓集中度是否过高` · `下单前现金够不够、有没有 T+1` |
 | [qmt-bridge-daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | 当日盈亏 | `今天账户盈亏多少` · `分标的列当日盈亏表` · `包含今天买卖和已清仓的盈亏` |
@@ -115,7 +115,7 @@ setup（安装/启动 Bridge）
 | 风控 | 集中度、现金 | `组合风险快照` · `下单前现金够不够` |
 | 盈亏 | 当日盈亏表 | `今天账户盈亏多少` · `分标的列当日盈亏表` |
 | 执行 | 预览后下单 | `预览这笔买单` · `用 Bridge 下一笔买入（先预览）` |
-| 复盘 | 委托/成交/操作评价 | `今日操作评估` · `生成今日交易复盘` |
+| 复盘 | 客观证据 + 三角色专家 | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` |
 | 量能 | 近3日两市成交额（复盘前） | `复盘前检查近3日量能` · `补齐上证深证近3日成交额` |
 | 飞书 | 复盘/盈亏/分析上传 | `同步今日复盘到飞书文档` |
 

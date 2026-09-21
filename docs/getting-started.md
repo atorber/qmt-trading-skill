@@ -41,6 +41,31 @@ Mac / Linux / Windows（主力机 · 本仓库）     Windows（中转站）
 npx skills add atorber/qmt-trading-skill -g -y
 ```
 
+### 更新已安装的 Skills
+
+仓库发新版后需主动覆盖安装（不会自动升级）。包版本见 [`skills/VERSION`](../skills/VERSION)。
+
+**对话提示词**（豆包工作 / WorkBuddy / Cursor 等）：
+
+```text
+帮我把 qmt-trading-skill 更新到最新版：https://github.com/atorber/qmt-trading-skill
+请覆盖安装 skills/ 目录下的全部 Agent Skills（每个子目录一个 Skill，跳过 _shared）。
+更新后读取并告诉我 skills/VERSION 的内容，确认已是最新。
+```
+
+**CLI**：
+
+```bash
+npx skills check
+npx skills update -g -y
+# 或
+npx skills add atorber/qmt-trading-skill -g -y
+```
+
+**git 克隆**：`git pull --recurse-submodules` 后查看 `skills/VERSION`。更新后建议新开对话再调用 Skill。
+
+完整说明见 [仓库 README · 更新 Skills](https://github.com/atorber/qmt-trading-skill#更新-skills已安装用户)。
+
 ### 开发克隆（需跑脚本时）
 
 ```bash
@@ -96,7 +121,7 @@ python skills/qmt-bridge-setup/scripts/bridge_health.py
 |-------|--------|
 | [setup](../skills/qmt-bridge-setup/SKILL.md) | `检查 QMT Bridge 是否已启动；若未启动再帮我安装并启动` |
 | [trading](../skills/qmt-bridge-trading/SKILL.md) | `帮我查持仓和可用资金` |
-| [execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | `生成今日交易复盘并评价操作质量` |
+| [execution-review](../skills/qmt-bridge-execution-review/SKILL.md) | `用投顾/基金经理/交易员三角色做今日复盘并综合裁决` |
 | [feishu-doc](../skills/qmt-bridge-feishu-doc/SKILL.md) | `把今日复盘同步到飞书` |
 | [portfolio-risk](../skills/qmt-bridge-portfolio-risk/SKILL.md) | `组合风险快照，看下持仓集中度` |
 | [daily-pnl](../skills/qmt-bridge-daily-pnl/SKILL.md) | `今天账户盈亏多少` |
