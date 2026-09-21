@@ -83,8 +83,33 @@ def test_feishu_md_sections():
     assert md.startswith("# QMT Bridge 当日复盘")
     assert "## 一、统计概览" in md
     assert "## 二、当日委托" in md
-    assert "## 五、当日操作评价" in md
-    assert "### 交易观对照" in md
+    # 默认 evidence 模式：五～七客观+占位（非旧版「当日操作评价」单节）
+    assert "## 五、盈亏与不操作基线（客观）" in md
+    assert "## 六、规则标签与算法参考分" in md
+    assert "## 七、专家评审" in md
     assert "### 分标的操作" in md
+    assert "### 市场与板块" in md
     assert "daily_trade_report.py --feishu-md" in md
     assert "新易盛" in md
+
+
+def test_feishu_md_rules_mode_legacy_section():
+    ev = _minimal_eval()
+    ev.eval_mode = "rules"
+    md = build_daily_eval_feishu_markdown(
+        trade_date="2026-05-22",
+        synced_at="2026-05-22 14:00:00",
+        account_id="test",
+        health={"status": "ok"},
+        account_status={"connected": True},
+        orders=[],
+        trades=[],
+        name_map={"300502.SZ": "新易盛"},
+        filled=0,
+        cancelled=0,
+        op_eval=ev,
+    )
+    assert "## 五、当日操作评价" in md
+    assert "### 交易观对照" in md
+    assert "### 做得好的" in md
+    assert "分步止盈执行到位" in md

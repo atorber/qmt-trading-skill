@@ -29,13 +29,16 @@ SZ_INDEX = "399106.SZ"
 SZ_FALLBACK = "399001.SZ"
 _DEFAULT_CACHE_REL = "reports/market_turnover_daily.json"
 
+# 相对工作区根；测试可 monkeypatch 为绝对路径
+DEFAULT_CACHE_PATH = Path(_DEFAULT_CACHE_REL)
+
 
 def default_turnover_cache_path() -> Path:
-    return resolve_workspace_path(_DEFAULT_CACHE_REL)
-
-
-# 兼容旧名：调用方应优先用 default_turnover_cache_path()
-DEFAULT_CACHE_PATH = Path(_DEFAULT_CACHE_REL)
+    """解析成交额缓存路径；尊重对 ``DEFAULT_CACHE_PATH`` 的覆盖（含测试 monkeypatch）。"""
+    p = DEFAULT_CACHE_PATH
+    if p.is_absolute():
+        return p
+    return resolve_workspace_path(p)
 
 
 def _normalize_trade_date(raw) -> str:
