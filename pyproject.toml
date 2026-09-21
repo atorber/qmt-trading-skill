@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "qmt-trading-skill"
-version = "1.1.0"
+version = "1.1.1"
 description = "Agent Skills：通过 QMT Bridge HTTP API 用自然语言完成行情、交易、复盘与飞书同步"
 readme = "README.md"
 license = "MIT"

@@ -8,13 +8,35 @@
 
 ## 一键安装
 
-在 **豆包工作** 、 **WorkBuddy** 等agent的对话里直接粘贴下面提示词，Agent 会自动拉取并安装本仓库的 Skills。
+在 **豆包工作** 、 **WorkBuddy** 等 Agent 的对话里直接粘贴下面提示词，Agent 会自动拉取并安装本仓库的 Skills。
 
 ```text
 帮我安装这个 skill：https://github.com/atorber/qmt-trading-skill
-请把仓库 skills/ 目录下的全部 Agent Skills 安装到当前环境（每个子目录一个 Skill，跳过 _shared）。
-安装完成后告诉我如何用自然语言查询持仓、当日盈亏和生成复盘。
+
+安装布局（必须遵守）：
+1. 把 skills/ 下每个 qmt-bridge-* 目录安装为独立 Skill（含 SKILL.md、scripts、references）。
+2. 同时把 skills/_shared 复制到与上述 Skill 同一父目录下（与各 qmt-bridge-* 并列）。
+   _shared 是共享库、没有 SKILL.md，不要注册成 Skill，但必须复制，否则脚本会 ImportError。
+3. 一并复制 skills/VERSION（便于核对版本）。
+4. 不要把仓库根目录其它文件误装成 Skill。
+
+安装完成后：读取 VERSION；说明如何用自然语言查持仓、当日盈亏和生成复盘；
+并确认 _shared 已与各 Skill 同级存在。
 ```
+
+正确目录示例（父目录名因 Agent 而异，如 `~/.agents/skills`、`~/.workbuddy/skills`、`.cursor/skills`）：
+
+```text
+<skills-root>/
+├── VERSION                 # 包版本
+├── _shared/                # 共享库（必须有，不是 Skill）
+├── qmt-bridge-setup/
+├── qmt-bridge-trading/
+├── qmt-bridge-execution-review/
+└── …其它 qmt-bridge-*
+```
+
+脚本用 `Path(__file__).parents[2] / "_shared"` 定位共享模块，因此 **`_shared` 必须与各 Skill 目录同级**。仅安装 `qmt-bridge-*`、漏拷 `_shared` 时，从技能目录跑脚本会失败。
 
 ### 通用 CLI（可选）
 
@@ -24,13 +46,15 @@
 npx skills add atorber/qmt-trading-skill -g -y
 ```
 
+CLI 按仓库结构安装时一般会带上同仓文件；若本地只有分散的 Skill 目录，请按上面布局补齐 `_shared`。
+
 安装 Skills 后，下一步是检测 / 按需启动 Bridge（见下方「使用」第 2 步），不要默认重复安装或重启已在跑的服务。
 
 ## 版本
 
 | 项 | 位置 | 当前 |
 |----|------|------|
-| Skills 包版本 | [`skills/VERSION`](skills/VERSION) | **1.1.0** |
+| Skills 包版本 | [`skills/VERSION`](skills/VERSION) | **1.1.1** |
 | Python 包版本 | [`pyproject.toml`](pyproject.toml) `project.version` | 与上同步 |
 | 变更说明 | [`skills/CHANGELOG.md`](skills/CHANGELOG.md) | 按版本记录 |
 
@@ -44,8 +68,11 @@ npx skills add atorber/qmt-trading-skill -g -y
 
 ```text
 帮我把 qmt-trading-skill 更新到最新版：https://github.com/atorber/qmt-trading-skill
-请覆盖安装 skills/ 目录下的全部 Agent Skills（每个子目录一个 Skill，跳过 _shared）。
-更新后读取并告诉我 skills/VERSION 的内容，确认已是最新。
+
+覆盖安装时保持布局：
+1. 更新全部 qmt-bridge-* Skill 目录；
+2. 同步更新同级的 _shared（共享库，不注册为 Skill，但必须存在）；
+3. 更新 VERSION，读出并告诉我版本号。
 ```
 
 若 Agent 使用 `npx skills`，也可说：`用 npx skills update 更新 atorber/qmt-trading-skill，并核对 VERSION`。

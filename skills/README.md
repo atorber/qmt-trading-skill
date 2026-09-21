@@ -4,6 +4,19 @@
 
 **包版本**：[VERSION](VERSION)（当前见文件内容）· [CHANGELOG.md](CHANGELOG.md) · 已安装环境如何升级见 [README「更新 Skills」](../README.md#更新-skills已安装用户)
 
+## 安装布局（重要）
+
+各 Skill 脚本通过 `../_shared`（相对「Skill 目录的上一级」）导入共享模块。因此 Agent 技能根目录必须为：
+
+```text
+<skills-root>/
+├── _shared/           # 必须复制；不是 Skill，勿当 Skill 注册
+├── qmt-bridge-*/      # 各 Skill
+└── VERSION
+```
+
+「不要把 `_shared` 注册成 Skill」≠「不要复制 `_shared`」。漏拷时只能退回到本仓库路径跑脚本。
+
 在线文档：
 
 - **[QMT Trading Skill 文档（GitHub Pages）](https://atorber.github.io/qmt-trading-skill/)** — 快速开始、配置、Agent Skills

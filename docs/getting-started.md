@@ -15,25 +15,21 @@ Mac / Linux / Windows（主力机 · 本仓库）     Windows（中转站）
 
 ## 1. 安装本仓库全部 Skills
 
-先把本仓 `skills/` 下全部 Agent Skills 装进当前 Agent（跳过 `_shared`）。
+把本仓 `skills/` 装进当前 Agent。**布局要求**：各 `qmt-bridge-*` 为 Skill；`_shared` 与它们**同级复制**（共享库，不注册为 Skill，但必须有）。
 
-### 豆包工作
-
-```text
-帮我安装这个 skill：https://github.com/atorber/qmt-trading-skill
-请把仓库 skills/ 目录下的全部 Agent Skills 安装到当前环境（每个子目录一个 Skill，跳过 _shared）。
-安装完成后告诉我如何用自然语言查询持仓、当日盈亏和生成复盘。
-```
-
-也可走界面：「技能 · 连接器 · 伙伴」→「我的技能」→「新建 — 上传技能」，拖入本地 `skills/qmt-bridge-*`（豆包工作也会自动发现本机 `.agents/skills`、`.codex/skills`）。
-
-### WorkBuddy
+### 对话安装（豆包工作 / WorkBuddy / Cursor 等）
 
 ```text
 帮我安装这个 skill：https://github.com/atorber/qmt-trading-skill
-请安装 skills/ 下全部 Agent Skills 到 ~/.workbuddy/skills/（每个子目录一个 Skill，跳过 _shared）。
-安装完成后新建对话，用自然语言即可调用（例如「今天账户盈亏多少」）。
+
+安装布局（必须遵守）：
+1. 把 skills/ 下每个 qmt-bridge-* 目录安装为独立 Skill。
+2. 同时把 skills/_shared 复制到与上述 Skill 同一父目录（并列）。_shared 是共享库，不要注册成 Skill，但必须复制。
+3. 一并复制 skills/VERSION。
+安装完成后读取 VERSION，并确认 _shared 与各 Skill 同级。
 ```
+
+也可界面上传：最终须为 `<skills-root>/_shared/` 与 `<skills-root>/qmt-bridge-*/` 并列。
 
 ### 通用 CLI
 
@@ -43,17 +39,10 @@ npx skills add atorber/qmt-trading-skill -g -y
 
 ### 更新已安装的 Skills
 
-仓库发新版后需主动覆盖安装（不会自动升级）。包版本见 [`skills/VERSION`](../skills/VERSION)。
-
-**对话提示词**（豆包工作 / WorkBuddy / Cursor 等）：
-
 ```text
 帮我把 qmt-trading-skill 更新到最新版：https://github.com/atorber/qmt-trading-skill
-请覆盖安装 skills/ 目录下的全部 Agent Skills（每个子目录一个 Skill，跳过 _shared）。
-更新后读取并告诉我 skills/VERSION 的内容，确认已是最新。
+覆盖全部 qmt-bridge-*，并同步同级 _shared 与 VERSION；读出 VERSION 确认。
 ```
-
-**CLI**：
 
 ```bash
 npx skills check
@@ -62,9 +51,7 @@ npx skills update -g -y
 npx skills add atorber/qmt-trading-skill -g -y
 ```
 
-**git 克隆**：`git pull --recurse-submodules` 后查看 `skills/VERSION`。更新后建议新开对话再调用 Skill。
-
-完整说明见 [仓库 README · 更新 Skills](https://github.com/atorber/qmt-trading-skill#更新-skills已安装用户)。
+**git 克隆**：`git pull --recurse-submodules` 后查看 `skills/VERSION`。更新后建议新开对话。详见 [仓库 README](https://github.com/atorber/qmt-trading-skill#更新-skills已安装用户)。
 
 ### 开发克隆（需跑脚本时）
 
