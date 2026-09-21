@@ -31,7 +31,7 @@ python skills/qmt-bridge-execution-review/scripts/combined_trade_report.py \
   --feishu-md
 ```
 
-产物：
+产物（相对**工作区根**，勿写死机器绝对路径；以脚本 stderr 打印的路径为准）：
 
 | 文件 | 说明 |
 |------|------|

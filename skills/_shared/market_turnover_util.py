@@ -17,10 +17,25 @@ from pathlib import Path
 
 from trading_philosophy import TurnoverDay, classify_volume_zone
 
+try:
+    from common import resolve_workspace_path
+except ImportError:  # pragma: no cover
+    def resolve_workspace_path(path: str | Path) -> Path:  # type: ignore[misc]
+        p = Path(path)
+        return p if p.is_absolute() else (Path.cwd() / p).resolve()
+
 SH_INDEX = "000001.SH"
 SZ_INDEX = "399106.SZ"
 SZ_FALLBACK = "399001.SZ"
-DEFAULT_CACHE_PATH = Path("reports/market_turnover_daily.json")
+_DEFAULT_CACHE_REL = "reports/market_turnover_daily.json"
+
+
+def default_turnover_cache_path() -> Path:
+    return resolve_workspace_path(_DEFAULT_CACHE_REL)
+
+
+# 兼容旧名：调用方应优先用 default_turnover_cache_path()
+DEFAULT_CACHE_PATH = Path(_DEFAULT_CACHE_REL)
 
 
 def _normalize_trade_date(raw) -> str:
@@ -142,7 +157,9 @@ def try_backfill_history_from_market_data(
 
 
 def load_turnover_cache(path: Path | None = None) -> dict[str, dict]:
-    path = path or DEFAULT_CACHE_PATH
+    path = path or default_turnover_cache_path()
+    if not path.is_absolute():
+        path = resolve_workspace_path(path)
     if not path.is_file():
         return {}
     try:
@@ -162,7 +179,9 @@ def save_turnover_cache_entry(
     source: str = "tick",
     sz_code: str = SZ_INDEX,
 ) -> None:
-    path = path or DEFAULT_CACHE_PATH
+    path = path or default_turnover_cache_path()
+    if not path.is_absolute():
+        path = resolve_workspace_path(path)
     if not trade_date or sh_yuan <= 0 or sz_yuan <= 0:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -360,5 +379,5 @@ def ensure_recent_turnover(
         "missing_sz_dates": missing_sz,
         "method": "full_tick+cache"
         + ("+optional_market_data" if try_history else ""),
-        "cache_path": str(DEFAULT_CACHE_PATH),
+        "cache_path": str(default_turnover_cache_path()),
     }

@@ -25,6 +25,18 @@ description: >-
 | `scripts/daily_trade_report.py` | 单账户；默认 `--eval-mode=evidence` → `reports/daily_eval_evidence.json`；`--feishu-md` |
 | `scripts/combined_trade_report.py` | 全账户综合；证据包 `reports/combined_daily_eval_evidence.json` |
 
+### 产物路径（禁止写死机器绝对路径）
+
+相对路径一律相对 **工作区根**（`workspace_root()`）：
+
+| 布局 | 工作区根 | `reports/` 位置 |
+|------|----------|-----------------|
+| 本仓库开发 | 仓库根（含 `skills/`） | `<repo>/reports/` |
+| Agent 安装 | Skills 安装根（`_shared` 的父目录） | `<skills-root>/reports/` |
+
+- 脚本 stderr 会打印**实际写入的绝对路径**；后续读写请用该路径或相对 `reports/...`，**禁止**把某台机器的 `C:\GitHub\...` 写进规程/提示词
+- 可选覆盖：`QMT_TRADING_SKILL_ROOT`（工作区根）或 `QMT_TRADING_SKILL_REPORTS`（reports 目录）
+
 ```bash
 # 推荐：客观报告 + 证据包
 python skills/qmt-bridge-execution-review/scripts/daily_trade_report.py \

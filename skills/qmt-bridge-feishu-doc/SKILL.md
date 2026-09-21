@@ -86,7 +86,7 @@ doc token：`reports/feishu_doc_ids.json` 或 `FEISHU_*_DOC_ID`。
 
 1. `lark-cli auth status` 正常；已读 **lark-shared** + **lark-doc**
 2. 运行对应 QMT Skill 脚本取数
-3. 写 `reports/*.md`（`--content` 路径相对仓库根）
+3. 写 `reports/*.md`（相对工作区根；Agent 安装下为 skills 根下的 `reports/`，**禁止**写死 `C:\GitHub\...`）
 4. `docs +update` 或 `+create`（可先 `--dry-run`）
 5. 核对云文档标题与 H1 一致
 6. **只上传报告，不下单**

@@ -26,7 +26,9 @@ from common import (  # noqa: E402
     load_env_files,
     make_client,
     resolve_account_type_for_id,
+    resolve_workspace_path,
     unwrap_data,
+    workspace_root,
 )
 from execution_review_eval import (  # noqa: E402
     build_evidence_pack,
@@ -48,8 +50,6 @@ from pnl_util import (  # noqa: E402
 )
 from stock_names import collect_stock_codes, fetch_stock_names  # noqa: E402
 from trading_fmt import pick  # noqa: E402
-
-_REPO = Path(__file__).resolve().parents[3]
 
 _DAILY_PNL_KEYS = (
     "today_profit_loss",
@@ -267,9 +267,7 @@ def main() -> int:
         args.eval_mode == "evidence" or args.evidence_json is not None
     ):
         ev_rel = args.evidence_json or "reports/daily_eval_evidence.json"
-        ev_out = Path(ev_rel)
-        if not ev_out.is_absolute():
-            ev_out = _REPO / ev_out
+        ev_out = resolve_workspace_path(ev_rel)
         trade_date = date.today().isoformat()
         pack = build_evidence_pack(
             trade_date=trade_date,
@@ -291,15 +289,13 @@ def main() -> int:
             encoding="utf-8",
         )
         try:
-            evidence_path_str = str(ev_out.relative_to(_REPO))
+            evidence_path_str = str(ev_out.relative_to(workspace_root()))
         except ValueError:
             evidence_path_str = str(ev_out)
         print(f"已写入证据包: {ev_out}", file=sys.stderr)
 
     if args.feishu_md:
-        out = Path(args.feishu_md)
-        if not out.is_absolute():
-            out = _REPO / out
+        out = resolve_workspace_path(args.feishu_md)
         synced = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         trade_date = date.today().isoformat()
         md = build_daily_eval_feishu_markdown(

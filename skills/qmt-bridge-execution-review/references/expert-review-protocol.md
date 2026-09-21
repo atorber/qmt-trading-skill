@@ -28,6 +28,7 @@ Agent 在生成「三角色复盘」或同步飞书第七节时 **必须** 遵�
    - **明日纪律**：恰好 1～3 条，可验证
 5. **落盘**：
    - 将完整「## 七、专家评审」写入 `reports/feishu_daily_eval_expert.md`（综合账户用 `feishu_combined_daily_eval_expert.md`）
+   - 路径相对工作区根（见 execution-review SKILL「产物路径」）；**禁止**写死 `C:\GitHub\...` 等机器绝对路径
    - 用专家节 **替换** 客观 MD 中第七节占位（或追加合并后覆盖 `reports/feishu_daily_eval.md`）
    - 再按 [feishu-doc 工作流](../../qmt-bridge-feishu-doc/references/workflows/daily-eval-sync.md) 上传
 

@@ -54,7 +54,7 @@ CLI 按仓库结构安装时一般会带上同仓文件；若本地只有分散�
 
 | 项 | 位置 | 当前 |
 |----|------|------|
-| Skills 包版本 | [`skills/VERSION`](skills/VERSION) | **1.1.1** |
+| Skills 包版本 | [`skills/VERSION`](skills/VERSION) | **1.1.2** |
 | Python 包版本 | [`pyproject.toml`](pyproject.toml) `project.version` | 与上同步 |
 | 变更说明 | [`skills/CHANGELOG.md`](skills/CHANGELOG.md) | 按版本记录 |
 

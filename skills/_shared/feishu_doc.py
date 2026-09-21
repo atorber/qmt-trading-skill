@@ -8,8 +8,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-_REPO = Path(__file__).resolve().parents[2]
-_DOC_IDS_FILE = _REPO / "reports" / "feishu_doc_ids.json"
+from common import reports_dir
+
+
+def _doc_ids_file() -> Path:
+    return reports_dir() / "feishu_doc_ids.json"
 
 
 @dataclass(frozen=True)
@@ -102,14 +105,15 @@ def title_from_markdown(md_path: Path) -> str | None:
 
 def load_doc_ids() -> dict[str, str]:
     ids: dict[str, str] = {}
-    if _DOC_IDS_FILE.is_file():
+    doc_ids_file = _doc_ids_file()
+    if doc_ids_file.is_file():
         try:
-            data = json.loads(_DOC_IDS_FILE.read_text(encoding="utf-8"))
+            data = json.loads(doc_ids_file.read_text(encoding="utf-8"))
             if isinstance(data, dict):
                 ids = {k: str(v) for k, v in data.items() if v}
         except json.JSONDecodeError:
             pass
-    legacy = _REPO / "reports" / "feishu_daily_eval_doc_id.txt"
+    legacy = reports_dir() / "feishu_daily_eval_doc_id.txt"
     if legacy.is_file() and "daily-eval" not in ids:
         token = legacy.read_text(encoding="utf-8").strip()
         if token:

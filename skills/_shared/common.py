@@ -7,8 +7,51 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# skills/_shared/common.py -> 仓库根目录
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+# skills/_shared/common.py → 上级为 skills 根（monorepo 的 skills/，或 Agent 安装根）
+_SHARED_DIR = Path(__file__).resolve().parent
+
+
+def skills_root() -> Path:
+    """各 Skill 与 `_shared` 的同级根目录。"""
+    return _SHARED_DIR.parent
+
+
+def workspace_root() -> Path:
+    """产物与 `.env` 所在工作区根。
+
+    - 可通过 ``QMT_TRADING_SKILL_ROOT`` 覆盖（勿写死机器绝对路径）
+    - monorepo：``<repo>/skills/_shared`` → 仓库根
+    - Agent 安装：``<skills-root>/_shared`` → skills-root 自身
+    """
+    override = (os.environ.get("QMT_TRADING_SKILL_ROOT") or "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+
+    sr = skills_root()
+    parent = sr.parent
+    if sr.name == "skills" and (
+        (parent / "pyproject.toml").is_file()
+        or (parent / ".git").exists()
+        or (parent / "README.md").is_file()
+    ):
+        return parent
+    return sr
+
+
+def reports_dir() -> Path:
+    """``reports/`` 目录（可用 ``QMT_TRADING_SKILL_REPORTS`` 覆盖）。"""
+    override = (os.environ.get("QMT_TRADING_SKILL_REPORTS") or "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
+    return workspace_root() / "reports"
+
+
+def resolve_workspace_path(path: str | Path) -> Path:
+    """相对路径相对 ``workspace_root()``；绝对路径原样返回。"""
+    p = Path(path)
+    if p.is_absolute():
+        return p
+    return (workspace_root() / p).resolve()
 
 
 def ensure_shared_import() -> None:
@@ -19,10 +62,21 @@ def ensure_shared_import() -> None:
 
 
 def load_env_files() -> None:
-    """从仓库根目录与当前工作目录加载 .env（简单 KEY=VALUE 解析）。"""
-    for path in (_REPO_ROOT / ".env", Path.cwd() / ".env"):
-        if not path.is_file():
+    """从工作区根 / skills 根 / cwd 加载 .env（简单 KEY=VALUE 解析）。"""
+    candidates = [
+        workspace_root() / ".env",
+        skills_root() / ".env",
+        Path.cwd() / ".env",
+    ]
+    seen: set[Path] = set()
+    for path in candidates:
+        try:
+            resolved = path.resolve()
+        except OSError:
             continue
+        if resolved in seen or not path.is_file():
+            continue
+        seen.add(resolved)
         for raw in path.read_text(encoding="utf-8").splitlines():
             line = raw.strip()
             if not line or line.startswith("#") or "=" not in line:

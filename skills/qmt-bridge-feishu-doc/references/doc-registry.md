@@ -67,7 +67,7 @@ QMT Trading Skill/                   # FEISHU_QMT_BRIDGE_FOLDER_TOKEN（根目�
 
 - 安装：`npx @larksuite/cli@latest install`；Skills：`npx skills add larksuite/cli -y -g`
 - `docs +create` / `docs +update` 必须 `--api-version v2`；复盘上传建议 `--as user`
-- `--content @reports/feishu_daily_eval.md`：**在仓库根执行**，路径相对当前目录
+- `--content @reports/feishu_daily_eval.md`：在**工作区根**执行（monorepo 仓库根，或 Agent skills 安装根）；路径相对该根，**禁止**写死机器绝对路径
 - 列表标题：**lark-drive** → `drive files patch`（`file_token` = docx token，`type=docx`）
 - 写操作可先 `--dry-run` 预览
 
