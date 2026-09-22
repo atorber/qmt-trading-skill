@@ -67,6 +67,11 @@ cp .env.example .env
 
 编辑 `.env`：`QMT_BRIDGE_HOST` / `QMT_BRIDGE_PORT` / `QMT_BRIDGE_API_KEY` 须与 Bridge 一致。
 
+- **开发克隆**：仓库根 `.env`
+- **社区 / Agent 安装**：`<skills-root>/.env`（与 `_shared` 同级；可复制 `skills/.env.example`）
+
+手动改文件或让 setup Skill 写入：见仓库 [README「配置客户端连接」](https://github.com/atorber/qmt-trading-skill#配置客户端连接)。变量表见 [配置参考](configuration.md)。
+
 !!! tip "客户端地址"
     服务端可监听 `0.0.0.0`；**Skill 脚本请连接 `127.0.0.1` 或 Windows 局域网 IP**，不要把 `0.0.0.0` 当作 HTTP 目标。
 

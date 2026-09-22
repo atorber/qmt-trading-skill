@@ -28,7 +28,8 @@ description: >-
 | 首次安装 | `帮我安装并启动 QMT Bridge` |
 | 日常启动 | `启动 qmt-server` · `用 PM2 拉起 Bridge` |
 | 排障 | `Bridge 连不上，帮我做健康检查` · `检查 qmt-server 是否在跑` |
-| 配置 | `配置 Bridge 的端口、API Key 和 miniQMT 路径` |
+| 配置客户端连接 | `帮我配置 Skills 连接 QMT Bridge：主机 127.0.0.1，端口 8080，写入 skills 根 .env 后做健康检查（API Key 勿打进聊天）` |
+| 配置 Bridge 服务端 | `配置 Bridge 的端口、API Key 和 miniQMT 路径` |
 
 ## 前提条件
 
@@ -112,11 +113,17 @@ python skills/qmt-bridge-setup/scripts/bridge_health.py --host 127.0.0.1 --port 
 
 健康检查通过后再跑交易/复盘类 Skill。
 
-## 规程：同步本仓客户端 `.env`
+## 规程：同步客户端 `.env`
 
-在 **qmt-trading-skill** 根目录：
+配置写在 **Skills 安装根**（与 `_shared` 同级），不是某个单独的 `qmt-bridge-*` 目录内。
+
+| 场景 | `.env` 位置 |
+|------|-------------|
+| 社区 / Agent 安装 | `<skills-root>/.env`（可先复制同级的 `.env.example`） |
+| git 克隆本仓库 | 仓库根 `.env`（复制仓库根或 `skills/.env.example`） |
 
 ```powershell
+# 在 skills 根（Agent 安装）或仓库根（开发克隆）
 copy .env.example .env
 ```
 
@@ -124,8 +131,16 @@ copy .env.example .env
 |------|------|
 | `QMT_BRIDGE_HOST` | `127.0.0.1` 或 Windows 局域网 IP，**禁止** `0.0.0.0` |
 | `QMT_BRIDGE_PORT` | 与 Bridge 实际监听端口相同 |
-| `QMT_BRIDGE_API_KEY` | 与 Bridge 相同 |
+| `QMT_BRIDGE_API_KEY` | 与 Bridge 相同（**勿**把真实值打进聊天） |
 | 账户 ID | 与 Bridge 侧一致（复盘双账户时配齐普通户+信用户） |
+
+Agent 用 Skill 帮用户配置时：
+
+1. 解析 skills 根（`_shared` 的父目录），**打印**将写入的 `.env` 绝对路径
+2. 无文件则从 `.env.example` 复制；有则只更新连接相关键
+3. 引导用户本地填写 API Key / 账号；写完后跑 `bridge_health.py` 并报告实际 host/port
+
+更完整的说明见仓库 README「配置客户端连接」。
 
 ## 脚本
 

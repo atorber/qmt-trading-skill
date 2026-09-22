@@ -2,6 +2,15 @@
 
 Skill 脚本读取环境变量连接 **已启动的 QMT Bridge**。优先级：**命令行 `--host/--port/--api-key` > 环境变量 > `.env` > 默认值**。
 
+### `.env` 文件位置
+
+| 安装方式 | 路径 |
+|----------|------|
+| 社区 / 对话装进 Agent | **`<skills-root>/.env`**（与 `_shared` 同级；示例见 [`skills/.env.example`](../skills/.env.example)） |
+| git 克隆本仓库 | **仓库根** `.env`（[`/.env.example`](../.env.example)） |
+
+脚本还会尝试加载当前工作目录的 `.env`；社区用户请优先写 skills 根，避免换目录后失效。手动修改与用 setup Skill 写入的说明见仓库 [README「配置客户端连接」](https://github.com/atorber/qmt-trading-skill#配置客户端连接)。
+
 服务端监听、交易开关、miniQMT 路径等见 [qmt-bridge 配置参考](https://github.com/atorber/qmt-bridge/blob/main/docs/configuration.md)。
 
 ## 连接 Bridge
